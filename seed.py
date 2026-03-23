@@ -1,8 +1,10 @@
 import os
+import json
 from datetime import datetime, timedelta
 
 from app import create_app
 from models import db, Company, Listing, ListingRequest
+from services.listing_analyzer import analyze_listing_text
 
 # Bu script, örnek firma, ilan ve talep verileri ekler.
 # Tek seferlik çalıştırmanız yeterlidir.
@@ -17,9 +19,22 @@ def seed_data():
         # Her ihtimale karşı tabloların varlığını kontrol et
         db.create_all()
 
-        # Zaten veri varsa tekrar eklememek için basit kontrol
+        # Zaten veri varsa tekrar eklememek için basit kontrol.
+        # Ancak yeni eklenen `tags` kolonunun eski kayıtlarda boş kalma ihtimaline karşı
+        # sadece etiketleri dolduruyoruz.
         if Company.query.count() > 0:
-            print("Seed verileri zaten eklenmiş görünüyor. İşlem iptal edildi.")
+            listings_existing = Listing.query.all()
+            updated = 0
+            for l in listings_existing:
+                if not l.tags_list:
+                    ai_result = analyze_listing_text(l.description or "")
+                    tags = ai_result.get("tags") or []
+                    l.tags = json.dumps(tags, ensure_ascii=False)
+                    updated += 1
+            db.session.commit()
+            print(
+                f"Seed verileri zaten eklenmiş görünüyor. Etiketler güncellendi: {updated} ilan."
+            )
             return
 
         # 1) Örnek firmalar
@@ -165,6 +180,12 @@ def seed_data():
                 created_at=datetime.utcnow(),
             ),
         ]
+
+        # 2. aşama: tohum ilanların etiketlerini lokal analizle doldur
+        for l in listings:
+            ai_result = analyze_listing_text(l.description or "")
+            tags = ai_result.get("tags") or []
+            l.tags = json.dumps(tags, ensure_ascii=False)
 
         db.session.add_all(listings)
         db.session.commit()

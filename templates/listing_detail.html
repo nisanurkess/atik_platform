@@ -19,10 +19,37 @@
             {{ listing.status }}
           </span>
         </div>
+
+        {% set tags = listing.tags_list if listing.tags_list else analysis_tags %}
+        {% if tags %}
+          <div class="mb-3">
+            <div class="text-muted small mb-1">Etiketler:</div>
+            <div class="d-flex flex-wrap gap-2">
+              {% for tag in tags %}
+                <span class="badge bg-light text-dark border">
+                  {{ tag }}
+                </span>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
         <p class="mb-3">
           {{ listing.description }}
         </p>
         <hr>
+
+        <div class="mb-3">
+          <h5 class="mb-2">AI Analiz Özeti</h5>
+          <div class="alert alert-light border mb-0">
+            <div class="small text-muted mb-1">Önerilen kategori</div>
+            <div class="fw-semibold">
+              {{ analysis_suggestion.predicted_category }}
+              ({{ analysis_suggestion.confidence }}% güven)
+            </div>
+          </div>
+        </div>
+
         <h5 class="mb-1">Firma Bilgileri</h5>
         <p class="mb-0">
           <strong>{{ listing.company.name }}</strong><br>
@@ -53,6 +80,49 @@
           <p class="text-muted mb-0">
             Bu ilana henüz talep gelmemiş.
           </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+      <div class="card-body">
+        <h4 class="section-title mb-3">Benzer İlanlar</h4>
+        {% if similar_listings and similar_listings|length > 0 %}
+          <div class="list-group list-group-flush">
+            {% for item in similar_listings %}
+              <a
+                href="{{ url_for('listing_detail', listing_id=item.listing.id) }}"
+                class="list-group-item list-group-item-action"
+              >
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                  <div class="me-2">
+                    <h6 class="mb-1">{{ item.listing.title }}</h6>
+                    <div class="text-muted small">
+                      {{ item.listing.company.name }} • {{ item.listing.city }} •
+                      {{ item.listing.category }}
+                    </div>
+                  </div>
+                  <span class="badge bg-primary rounded-pill">
+                    {{ item.uyum_skoru }}% uyum
+                  </span>
+                </div>
+
+                {% if item.ortak_etiketler and item.ortak_etiketler|length > 0 %}
+                  <div class="mt-2">
+                    {% for tag in item.ortak_etiketler[:4] %}
+                      <span class="badge bg-secondary me-1">{{ tag }}</span>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <div class="mt-2">
+                    <span class="text-muted small">Ortak etiket yok.</span>
+                  </div>
+                {% endif %}
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">Uygun benzer ilan bulunamadı.</p>
         {% endif %}
       </div>
     </div>

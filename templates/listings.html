@@ -79,6 +79,17 @@
                 {{ listing.status }}
               </span>
             </div>
+
+            {% if listing.tags_list and listing.tags_list|length > 0 %}
+              <div class="mb-2">
+                {% for tag in listing.tags_list[:3] %}
+                  <span class="badge bg-light text-dark border me-1">
+                    {{ tag }}
+                  </span>
+                {% endfor %}
+              </div>
+            {% endif %}
+
             <p class="card-text flex-grow-1">
               {{ listing.description[:100] }}{% if listing.description|length > 100 %}...{% endif %}
             </p>

@@ -53,6 +53,33 @@
             >{{ form_data.get('description', '') }}</textarea>
           </div>
 
+          <div class="mb-3">
+            <div class="alert alert-light border mb-2">
+              <div class="fw-semibold mb-1">Akıllı kategori önerisi</div>
+              <div
+                id="kategori_onerisi_metni"
+                class="text-muted small mb-2"
+              >
+                Açıklamayı yazdıkça öneri üretilecek.
+              </div>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                id="kategori_onerisi_uygula"
+                disabled
+              >
+                Öneriyi uygula
+              </button>
+            </div>
+
+            <label class="form-label mb-2">Önerilen etiketler</label>
+            <div
+              id="etiket_onerileri"
+              class="d-flex flex-wrap gap-2 mb-2"
+            ></div>
+            <input type="hidden" name="tags" id="tags_input" value="">
+          </div>
+
           <div class="row">
             <div class="col-md-4 mb-3">
               <label for="category" class="form-label">Kategori</label>
@@ -118,5 +145,146 @@
     </div>
   </div>
 </div>
+
+<script>
+  (function () {
+    const descriptionEl = document.getElementById("description");
+    const categorySelect = document.getElementById("category");
+    const confidenceEl = document.getElementById("kategori_onerisi_metni");
+    const applyBtn = document.getElementById("kategori_onerisi_uygula");
+    const etiketContainer = document.getElementById("etiket_onerileri");
+    const tagsInput = document.getElementById("tags_input");
+
+    let manualCategory = false;
+    let lastSuggestion = null;
+
+    function setNoSuggestion() {
+      if (confidenceEl) {
+        confidenceEl.textContent = "Açıklamayı yazdıkça öneri üretilecek.";
+      }
+      if (etiketContainer) {
+        etiketContainer.innerHTML = "";
+      }
+      if (tagsInput) {
+        tagsInput.value = "";
+      }
+      if (applyBtn) {
+        applyBtn.disabled = true;
+        applyBtn.textContent = "Öneriyi uygula";
+      }
+    }
+
+    async function analyze() {
+      const text = (descriptionEl.value || "").trim();
+      if (!text || text.length < 5) {
+        setNoSuggestion();
+        return;
+      }
+
+      if (confidenceEl) {
+        confidenceEl.textContent = "Analiz ediliyor...";
+      }
+
+      try {
+        const resp = await fetch("{{ url_for('ai_analyze_listing_text') }}", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ description: text }),
+        });
+
+        if (!resp.ok) {
+          throw new Error("HTTP " + resp.status);
+        }
+
+        const data = await resp.json();
+        const suggestedCategory = data.predicted_category || "Diğer";
+        const confidence = data.confidence || 0;
+        const tags = data.tags || [];
+
+        lastSuggestion = {
+          suggestedCategory,
+          confidence,
+          tags,
+        };
+
+        if (confidence > 0) {
+          if (confidenceEl) {
+            confidenceEl.textContent =
+              "Önerilen kategori: " +
+              suggestedCategory +
+              " (" +
+              confidence +
+              "% güven)";
+          }
+          if (applyBtn) {
+            applyBtn.disabled = false;
+          }
+        } else {
+          if (confidenceEl) {
+            confidenceEl.textContent = "Kategori önerisi bulunamadı.";
+          }
+          if (applyBtn) {
+            applyBtn.disabled = true;
+          }
+        }
+
+        if (etiketContainer) {
+          etiketContainer.innerHTML = "";
+          tags.slice(0, 5).forEach((tag) => {
+            const span = document.createElement("span");
+            span.className = "badge bg-secondary";
+            span.textContent = tag;
+            etiketContainer.appendChild(span);
+          });
+        }
+
+        if (tagsInput) {
+          tagsInput.value = JSON.stringify(tags);
+        }
+
+        if (!manualCategory) {
+          categorySelect.value = suggestedCategory;
+        }
+      } catch (e) {
+        setNoSuggestion();
+        if (confidenceEl) {
+          confidenceEl.textContent = "Analiz sırasında bir hata oluştu.";
+        }
+      }
+    }
+
+    if (categorySelect) {
+      categorySelect.addEventListener("change", function (e) {
+        // JS'in set ettiği değerleri kullanıcı müdahalesi saymayalım.
+        if (e && e.isTrusted) {
+          manualCategory = true;
+        }
+      });
+    }
+
+    if (applyBtn) {
+      applyBtn.addEventListener("click", function () {
+        if (!lastSuggestion || !(lastSuggestion.confidence > 0)) return;
+        categorySelect.value = lastSuggestion.suggestedCategory;
+        manualCategory = true;
+      });
+    }
+
+    let timer = null;
+    if (descriptionEl) {
+      descriptionEl.addEventListener("input", function () {
+        clearTimeout(timer);
+        timer = setTimeout(analyze, 500);
+      });
+    }
+
+    setNoSuggestion();
+
+    // Sayfa yüklüyse (örn. validasyon hatasında geri döndüyse) mevcut açıklamadan analiz et.
+    if (descriptionEl && descriptionEl.value && descriptionEl.value.trim().length >= 5) {
+      analyze();
+    }
+  })();
+</script>
 {% endblock %}
 

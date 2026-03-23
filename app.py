@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime
 
 from flask import (
@@ -9,9 +10,14 @@ from flask import (
     url_for,
     flash,
     abort,
+    jsonify,
 )
 
 from models import db, Company, Listing, ListingRequest
+from services.listing_analyzer import analyze_listing_text
+from services.recommender import recommend_similar_listings
+
+from sqlalchemy import text as sql_text
 
 # Sabit kategori listesi
 CATEGORIES = [
@@ -43,11 +49,42 @@ def create_app():
     # Tablo oluşturma
     with app.app_context():
         db.create_all()
+        # Yeni alan eklediğimiz durumlarda (ör: `tags`), Flask-SQLAlchemy mevcut tabloyu
+        # otomatik ALTER etmez. SQLite üzerinde basit kolon kontrolü yapıyoruz.
+        try:
+            cols = [
+                row[1]
+                for row in db.session.execute(
+                    sql_text("PRAGMA table_info(listings)")
+                ).fetchall()
+            ]
+            if "tags" not in cols:
+                db.session.execute(
+                    sql_text("ALTER TABLE listings ADD COLUMN tags TEXT")
+                )
+                db.session.commit()
+        except Exception:
+            # Uygulama çalışsın diye şema kontrol hatasını yutuyoruz.
+            # DB tarafında sorun olursa isteklerde hata göreceksiniz.
+            pass
 
     # Kategorileri tüm şablonlara otomatik gönder
     @app.context_processor
     def inject_globals():
         return {"CATEGORIES": CATEGORIES}
+
+    @app.route("/ai/analyze", methods=["POST"])
+    def ai_analyze_listing_text():
+        payload = request.get_json(silent=True) or {}
+        description = (payload.get("description") or "").strip()
+
+        if not description:
+            return jsonify(
+                {"predicted_category": "Diğer", "confidence": 0, "tags": []}
+            )
+
+        result = analyze_listing_text(description)
+        return jsonify(result)
 
     # 404 için kullanıcı dostu bir sayfa
     @app.errorhandler(404)
@@ -135,6 +172,10 @@ def create_app():
                 )
 
             try:
+                ai_result = analyze_listing_text(description)
+                tags = ai_result.get("tags") or []
+                tags_json = json.dumps(tags, ensure_ascii=False)
+
                 new_listing = Listing(
                     company_id=company.id,
                     title=title,
@@ -144,6 +185,7 @@ def create_app():
                     city=city,
                     status="Aktif",
                     created_at=datetime.utcnow(),
+                    tags=tags_json,
                 )
                 db.session.add(new_listing)
                 db.session.commit()
@@ -247,11 +289,26 @@ def create_app():
             .all()
         )
 
+        analysis = analyze_listing_text(listing.description or "")
+        similar_listings = recommend_similar_listings(
+            listing,
+            Listing.query.filter(Listing.id != listing.id, Listing.status == "Aktif").all(),
+            limit=4,
+        )
+
+        analysis_suggestion = {
+            "predicted_category": analysis.get("predicted_category", "Diğer"),
+            "confidence": analysis.get("confidence", 0),
+        }
+
         return render_template(
             "listing_detail.html",
             title=f"İlan Detayı - {listing.title}",
             listing=listing,
             requests_for_listing=requests_for_listing,
+            analysis_suggestion=analysis_suggestion,
+            analysis_tags=analysis.get("tags") or [],
+            similar_listings=similar_listings,
         )
 
     return app
