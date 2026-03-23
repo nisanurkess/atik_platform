@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h2 class="section-title mb-1">{{ listing.title }}</h2>
+        <p class="text-muted small mb-3">
+          {{ listing.company.name }} • {{ listing.city }} •
+          {{ listing.created_at.strftime('%d.%m.%Y %H:%M') }}
+        </p>
+        <div class="mb-3">
+          <span class="badge bg-secondary me-1">{{ listing.category }}</span>
+          <span class="badge bg-light text-dark border me-1">
+            Miktar: {{ listing.quantity }}
+          </span>
+          <span class="badge bg-{{ 'success' if listing.status == 'Aktif' else 'secondary' }}">
+            {{ listing.status }}
+          </span>
+        </div>
+        <p class="mb-3">
+          {{ listing.description }}
+        </p>
+        <hr>
+        <h5 class="mb-1">Firma Bilgileri</h5>
+        <p class="mb-0">
+          <strong>{{ listing.company.name }}</strong><br>
+          Sektör: {{ listing.company.sector }}<br>
+          Şehir: {{ listing.company.city }}
+        </p>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h4 class="section-title mb-3">Bu İlana Gelen Talepler</h4>
+        {% if requests_for_listing %}
+          <div class="list-group">
+            {% for req in requests_for_listing %}
+              <div class="list-group-item list-group-item-action flex-column align-items-start">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">{{ req.company_name }} ({{ req.company_city }})</h6>
+                  <small class="text-muted">
+                    {{ req.created_at.strftime('%d.%m.%Y %H:%M') }}
+                  </small>
+                </div>
+                <p class="mb-1">{{ req.message }}</p>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">
+            Bu ilana henüz talep gelmemiş.
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4 mt-4 mt-lg-0">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h4 class="section-title mb-3">Bu İlan İçin Talep Gönder</h4>
+        <p class="text-muted small">
+          Kendi firmanız adına bu ilan için mesaj bırakabilirsiniz.
+        </p>
+        <form method="post" class="request-form">
+          <div class="mb-3">
+            <label for="company_name" class="form-label">Firma Adı</label>
+            <input
+              type="text"
+              class="form-control"
+              id="company_name"
+              name="company_name"
+              required
+            >
+          </div>
+          <div class="mb-3">
+            <label for="company_city" class="form-label">Firma Şehri</label>
+            <input
+              type="text"
+              class="form-control"
+              id="company_city"
+              name="company_city"
+              required
+            >
+          </div>
+          <div class="mb-3">
+            <label for="message" class="form-label">Mesaj</label>
+            <textarea
+              class="form-control"
+              id="message"
+              name="message"
+              rows="4"
+              required
+            ></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            Talep Gönder
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

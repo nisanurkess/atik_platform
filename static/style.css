@@ -1,0 +1,62 @@
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.page-title {
+  font-weight: 700;
+}
+
+.section-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.summary-card {
+  border: none;
+  border-radius: 0.75rem;
+}
+
+.summary-number {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.listing-card {
+  border: none;
+  border-radius: 0.75rem;
+}
+
+.listing-card .card-body {
+  padding: 1.1rem 1.1rem 1rem;
+}
+
+.filter-area {
+  border: 1px solid #e5e5e5;
+}
+
+.listing-form .form-label,
+.request-form .form-label {
+  font-weight: 500;
+}
+
+.navbar-brand {
+  font-size: 1.1rem;
+}
+
+.navbar .nav-link.active {
+  font-weight: 600;
+}
+
+/* Mobilde kart ve boşluklar */
+@media (max-width: 576px) {
+  .summary-card,
+  .listing-card {
+    border-radius: 0.5rem;
+  }
+
+  main.container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
