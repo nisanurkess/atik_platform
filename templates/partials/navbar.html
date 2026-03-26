@@ -1,19 +1,42 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+  <div class="container navbar-main-wrap">
+    <div class="d-flex align-items-center gap-2 navbar-mobile-left">
+      <button
+        class="navbar-toggler nav-icon-btn"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#mainNavbar"
+        aria-controls="mainNavbar"
+        aria-expanded="false"
+        aria-label="Menüyü Aç/Kapat"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <a
+        class="btn btn-outline-secondary btn-sm navbar-home-btn nav-icon-btn"
+        href="{{ url_for('index') }}"
+        aria-label="Ana Sayfa"
+        title="Ana Sayfa"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          viewBox="0 0 16 16"
+          aria-hidden="true"
+        >
+          <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 2 8h1v6a1 1 0 0 0 1 1h3.5a.5.5 0 0 0 .5-.5V11h2v3.5a.5.5 0 0 0 .5.5H14a1 1 0 0 0 1-1V8h1a.5.5 0 0 0 .354-.854z"/>
+        </svg>
+      </a>
+    </div>
+    <a
+      class="navbar-brand fw-bold mb-0 text-truncate"
+      href="{{ url_for('index') }}"
+      aria-label="Ana Sayfaya Git"
+    >
       Atık Değişim Platformu
     </a>
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#mainNavbar"
-      aria-controls="mainNavbar"
-      aria-expanded="false"
-      aria-label="Menüyü Aç/Kapat"
-    >
-      <span class="navbar-toggler-icon"></span>
-    </button>
 
     <div class="collapse navbar-collapse" id="mainNavbar">
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
@@ -53,7 +76,7 @@
         </li>
       </ul>
 
-      <div class="d-flex align-items-center gap-2 ms-lg-3 mt-2 mt-lg-0">
+      <div class="d-flex align-items-center gap-2 ms-lg-3 mt-2 mt-lg-0 navbar-auth-actions">
         {% if current_user.is_authenticated %}
           <form method="post" action="{{ url_for('logout') }}">
             <button class="btn btn-outline-secondary btn-sm" type="submit">

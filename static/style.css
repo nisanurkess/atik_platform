@@ -47,8 +47,83 @@ body {
   font-weight: 600;
 }
 
+.navbar-main-wrap {
+  flex-wrap: wrap;
+}
+
+.navbar-mobile-left {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-home-btn {
+  line-height: 1;
+}
+
+.nav-icon-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.navbar-brand {
+  min-width: 0;
+}
+
+.navbar-auth-actions {
+  flex-wrap: wrap;
+}
+
+.navbar {
+  position: relative;
+  z-index: 1030;
+}
+
 /* Mobilde kart ve boşluklar */
 @media (max-width: 576px) {
+  .navbar-main-wrap {
+    gap: 0.5rem;
+  }
+
+  .navbar-mobile-left {
+    order: 1;
+  }
+
+  .navbar-brand {
+    order: 2;
+    flex: 1 1 auto;
+    max-width: calc(100% - 7.5rem);
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .navbar-collapse {
+    order: 3;
+    width: 100%;
+    margin-top: 0.25rem;
+    background: #fff;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem 0.75rem;
+  }
+
+  .navbar-auth-actions {
+    justify-content: flex-start;
+  }
+
+  .navbar-auth-actions .btn {
+    margin-bottom: 0.25rem;
+  }
+
+  .navbar-nav .nav-link {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
   .summary-card,
   .listing-card {
     border-radius: 0.5rem;
