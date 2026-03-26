@@ -3,11 +3,12 @@ import json
 from datetime import datetime, timedelta
 
 from app import create_app
-from models import db, Company, Listing, ListingRequest
+from models import Firm, Listing, ListingRequest, User, db
 from services.listing_analyzer import analyze_listing_text
 
 # Bu script, örnek firma, ilan ve talep verileri ekler.
-# Tek seferlik çalıştırmanız yeterlidir.
+# Tek seferlik değildir; tekrar çalıştırıldığında duplicate üretmemesi için
+# var olan kayıtlar kontrol edilir.
 
 
 def seed_data():
@@ -19,222 +20,228 @@ def seed_data():
         # Her ihtimale karşı tabloların varlığını kontrol et
         db.create_all()
 
-        # Zaten veri varsa tekrar eklememek için basit kontrol.
-        # Ancak yeni eklenen `tags` kolonunun eski kayıtlarda boş kalma ihtimaline karşı
-        # sadece etiketleri dolduruyoruz.
-        if Company.query.count() > 0:
-            listings_existing = Listing.query.all()
-            updated = 0
-            for l in listings_existing:
-                if not l.tags_list:
-                    ai_result = analyze_listing_text(l.description or "")
-                    tags = ai_result.get("tags") or []
-                    l.tags = json.dumps(tags, ensure_ascii=False)
-                    updated += 1
-            db.session.commit()
-            print(
-                f"Seed verileri zaten eklenmiş görünüyor. Etiketler güncellendi: {updated} ilan."
-            )
-            return
+        demo_password = "demo12345"
 
-        # 1) Örnek firmalar
-        companies = [
-            Company(
-                name="Anadolu Plastik Sanayi A.Ş.",
-                sector="Plastik Üretimi",
-                city="İstanbul",
-                created_at=datetime.utcnow() - timedelta(days=30),
-            ),
-            Company(
-                name="Ege Metal İşleme Ltd.",
-                sector="Metal İşleme",
-                city="İzmir",
-                created_at=datetime.utcnow() - timedelta(days=25),
-            ),
-            Company(
-                name="Yeşil Geri Dönüşüm A.Ş.",
-                sector="Geri Dönüşüm",
-                city="Kocaeli",
-                created_at=datetime.utcnow() - timedelta(days=20),
-            ),
-            Company(
-                name="Marmara Tekstil Fabrikası",
-                sector="Tekstil",
-                city="Bursa",
-                created_at=datetime.utcnow() - timedelta(days=15),
-            ),
-            Company(
-                name="Pak Ambalaj Sanayi",
-                sector="Ambalaj",
-                city="Ankara",
-                created_at=datetime.utcnow() - timedelta(days=10),
-            ),
+        demo_users = [
+            {
+                "email": "anadolu@demo.com",
+                "full_name": "Anadolu Plastik Demo",
+                "firm": {
+                    "name": "Anadolu Plastik Sanayi A.Ş.",
+                    "sector": "Plastik Üretimi",
+                    "city": "İstanbul",
+                    "description": "Temiz ve sınıflandırılmış plastik atık tedariki.",
+                    "phone": "0212 000 00 00",
+                },
+            },
+            {
+                "email": "ege@demo.com",
+                "full_name": "Ege Metal Demo",
+                "firm": {
+                    "name": "Ege Metal İşleme Ltd.",
+                    "sector": "Metal İşleme",
+                    "city": "İzmir",
+                    "description": "Lazer kesim sonrası metal hurdaların değerlendirilmesi.",
+                    "phone": "0232 000 00 00",
+                },
+            },
+            {
+                "email": "yesil@demo.com",
+                "full_name": "Yeşil Dönüşüm Demo",
+                "firm": {
+                    "name": "Yeşil Geri Dönüşüm A.Ş.",
+                    "sector": "Geri Dönüşüm",
+                    "city": "Kocaeli",
+                    "description": "Geri dönüşüm operasyonları ve malzeme hazırlığı.",
+                    "phone": "0262 000 00 00",
+                },
+            },
+            {
+                "email": "marmara@demo.com",
+                "full_name": "Marmara Tekstil Demo",
+                "firm": {
+                    "name": "Marmara Tekstil Fabrikası",
+                    "sector": "Tekstil",
+                    "city": "Bursa",
+                    "description": "Tekstil parça atıklarının değerlendirilmesi.",
+                    "phone": "0224 000 00 00",
+                },
+            },
+            {
+                "email": "pakambalaj@demo.com",
+                "full_name": "Pak Ambalaj Demo",
+                "firm": {
+                    "name": "Pak Ambalaj Sanayi",
+                    "sector": "Ambalaj",
+                    "city": "Ankara",
+                    "description": "Ambalaj atıklarının geri dönüşüme kazandırılması.",
+                    "phone": "0312 000 00 00",
+                },
+            },
         ]
 
-        db.session.add_all(companies)
-        db.session.commit()
+        user_by_email = {}
+        for u in demo_users:
+            existing_user = User.query.filter_by(email=u["email"].lower()).first()
+            if not existing_user:
+                existing_user = User(
+                    full_name=u["full_name"],
+                    email=u["email"].lower(),
+                )
+                existing_user.set_password(demo_password)
+                db.session.add(existing_user)
+                db.session.commit()
+            user_by_email[u["email"].lower()] = existing_user
 
-        # Kolay erişim için tekrar çekelim
-        companies = Company.query.all()
+        # Firmaları tek kullanıcı tek firma kuralına göre ekle/güncelle
+        firm_by_email = {}
+        for u in demo_users:
+            user = user_by_email[u["email"].lower()]
+            firm = Firm.query.filter_by(user_id=user.id).first()
+            if not firm:
+                firm = Firm(
+                    user_id=user.id,
+                    name=u["firm"]["name"],
+                    sector=u["firm"]["sector"],
+                    city=u["firm"]["city"],
+                    description=u["firm"].get("description") or None,
+                    phone=u["firm"].get("phone") or None,
+                    created_at=datetime.utcnow() - timedelta(days=30),
+                )
+                db.session.add(firm)
+                db.session.commit()
+            firm_by_email[u["email"].lower()] = firm
 
-        # 2) Örnek ilanlar
-        listings = [
-            Listing(
-                company_id=companies[0].id,
-                title="Renkli Plastik Granül Atığı",
-                description="Üretim sürecinden çıkan, farklı renklerde plastik granül atıkları. Temiz ve sınıflandırılmış durumdadır.",
-                category="Plastik",
-                quantity="3 ton",
-                city="İstanbul",
-                status="Aktif",
-                created_at=datetime.utcnow() - timedelta(days=7),
-            ),
-            Listing(
-                company_id=companies[1].id,
-                title="Çelik Sac Kesim Artıkları",
-                description="Lazer kesim sonrası oluşan çelik sac artıkları. Geri dönüşüm için uygundur.",
-                category="Metal",
-                quantity="5 ton",
-                city="İzmir",
-                status="Aktif",
-                created_at=datetime.utcnow() - timedelta(days=6),
-            ),
-            Listing(
-                company_id=companies[2].id,
-                title="Karton ve Kağıt Atığı",
-                description="Ofis ve üretim hattından toplanan karışık karton ve kağıt atıkları.",
-                category="Kağıt",
-                quantity="2,5 ton",
-                city="Kocaeli",
-                status="Aktif",
-                created_at=datetime.utcnow() - timedelta(days=5),
-            ),
-            Listing(
-                company_id=companies[3].id,
-                title="Kumaş Parça Atıkları",
-                description="Farklı renk ve türlerde tekstil kumaş parça atıkları. Dolgu ve yalıtım malzemesi yapımına uygundur.",
-                category="Tekstil",
-                quantity="1,2 ton",
-                city="Bursa",
-                status="Aktif",
-                created_at=datetime.utcnow() - timedelta(days=4),
-            ),
-            Listing(
-                company_id=companies[0].id,
-                title="Şeffaf PET Şişe Atıkları",
-                description="İçecek üretiminden çıkan temiz PET şişe atıkları. Sadece şeffaf malzeme.",
-                category="Plastik",
-                quantity="4 ton",
-                city="İstanbul",
-                status="Aktif",
-                created_at=datetime.utcnow() - timedelta(days=3),
-            ),
-            Listing(
-                company_id=companies[4].id,
-                title="Hasarlı Karton Kutular",
-                description="Nakliye sırasında hasar gören ancak geri dönüşüme uygun karton kutular.",
-                category="Kağıt",
-                quantity="1 ton",
-                city="Ankara",
-                status="Aktif",
-                created_at=datetime.utcnow() - timedelta(days=2),
-            ),
-            Listing(
-                company_id=companies[2].id,
-                title="Cam Şişe ve Kavanoz Atıkları",
-                description="Toplama hattından gelen karışık cam şişe ve kavanoz atıkları.",
-                category="Cam",
-                quantity="3,5 ton",
-                city="Kocaeli",
-                status="Aktif",
-                created_at=datetime.utcnow() - timedelta(days=2),
-            ),
-            Listing(
-                company_id=companies[1].id,
-                title="Elektronik Kart Atıkları",
-                description="Arızalı üretimlerden kalan baskılı devre kartları. Ayrıştırma yapılmamıştır.",
-                category="Elektronik",
-                quantity="500 kg",
-                city="İzmir",
-                status="Aktif",
-                created_at=datetime.utcnow() - timedelta(days=1),
-            ),
-            Listing(
-                company_id=companies[3].id,
-                title="Organik Gıda Atıkları",
-                description="Üretim tarihi geçen ancak kompost için uygun organik gıda atıkları.",
-                category="Organik",
-                quantity="1 ton",
-                city="Bursa",
-                status="Aktif",
-                created_at=datetime.utcnow() - timedelta(days=1),
-            ),
-            Listing(
-                company_id=companies[4].id,
-                title="Kimyasal Temizlik Artıkları",
-                description="Üretim sonrası kalan, belirli standartlara uygun sıvı temizlik kimyasalı artıkları.",
-                category="Kimyasal",
-                quantity="800 litre",
-                city="Ankara",
-                status="Aktif",
-                created_at=datetime.utcnow(),
-            ),
+        # Demo ilanlar (firmalara bağlı olacak)
+        demo_listings = [
+            {
+                "firm_email": "anadolu@demo.com",
+                "title": "Renkli Plastik Granül Atığı",
+                "description": "Üretim sürecinden çıkan, farklı renklerde plastik granül atıkları. Temiz ve sınıflandırılmış durumdadır.",
+                "category": "Plastik",
+                "quantity": "3 ton",
+                "price": None,
+                "created_at": datetime.utcnow() - timedelta(days=7),
+            },
+            {
+                "firm_email": "ege@demo.com",
+                "title": "Çelik Sac Kesim Artıkları",
+                "description": "Lazer kesim sonrası oluşan çelik sac artıkları. Geri dönüşüm için uygundur.",
+                "category": "Metal",
+                "quantity": "5 ton",
+                "price": None,
+                "created_at": datetime.utcnow() - timedelta(days=6),
+            },
+            {
+                "firm_email": "yesil@demo.com",
+                "title": "Karton ve Kağıt Atığı",
+                "description": "Ofis ve üretim hattından toplanan karışık karton ve kağıt atıkları.",
+                "category": "Kağıt",
+                "quantity": "2,5 ton",
+                "price": None,
+                "created_at": datetime.utcnow() - timedelta(days=5),
+            },
+            {
+                "firm_email": "marmara@demo.com",
+                "title": "Kumaş Parça Atıkları",
+                "description": "Farklı renk ve türlerde tekstil kumaş parça atıkları. Dolgu ve yalıtım malzemesi yapımına uygundur.",
+                "category": "Tekstil",
+                "quantity": "1,2 ton",
+                "price": None,
+                "created_at": datetime.utcnow() - timedelta(days=4),
+            },
+            {
+                "firm_email": "anadolu@demo.com",
+                "title": "Şeffaf PET Şişe Atıkları",
+                "description": "İçecek üretiminden çıkan temiz PET şişe atıkları. Sadece şeffaf malzeme.",
+                "category": "Plastik",
+                "quantity": "4 ton",
+                "price": None,
+                "created_at": datetime.utcnow() - timedelta(days=3),
+            },
+            {
+                "firm_email": "pakambalaj@demo.com",
+                "title": "Hasarlı Karton Kutular",
+                "description": "Nakliye sırasında hasar gören ancak geri dönüşüme uygun karton kutular.",
+                "category": "Kağıt",
+                "quantity": "1 ton",
+                "price": None,
+                "created_at": datetime.utcnow() - timedelta(days=2),
+            },
         ]
 
-        # 2. aşama: tohum ilanların etiketlerini lokal analizle doldur
-        for l in listings:
-            ai_result = analyze_listing_text(l.description or "")
+        for dl in demo_listings:
+            firm = firm_by_email[dl["firm_email"]]
+            exists = Listing.query.filter_by(firm_id=firm.id, title=dl["title"]).first()
+            if exists:
+                continue
+
+            ai_result = analyze_listing_text(dl["description"] or "")
             tags = ai_result.get("tags") or []
-            l.tags = json.dumps(tags, ensure_ascii=False)
 
-        db.session.add_all(listings)
+            listing = Listing(
+                firm_id=firm.id,
+                title=dl["title"],
+                description=dl["description"],
+                category=dl["category"],
+                quantity=dl["quantity"],
+                city=firm.city,
+                price=dl.get("price") or None,
+                status="Aktif",
+                created_at=dl["created_at"],
+                tags=json.dumps(tags, ensure_ascii=False),
+            )
+            db.session.add(listing)
+
         db.session.commit()
 
-        listings = Listing.query.all()
-
-        # 3) Örnek talepler
-        requests = [
-            ListingRequest(
-                listing_id=listings[0].id,
-                company_name="Doğa Geri Kazanım Ltd.",
-                company_city="İstanbul",
-                message="Plastik granülleri düzenli olarak alabiliriz. Aylık minimum 2 ton talebimiz var.",
-                created_at=datetime.utcnow() - timedelta(days=3),
-            ),
-            ListingRequest(
-                listing_id=listings[1].id,
-                company_name="Anka Metal Geri Dönüşüm",
-                company_city="Kocaeli",
-                message="Çelik sac artıklarını yerinde görüp teklif vermek isteriz.",
-                created_at=datetime.utcnow() - timedelta(days=2, hours=5),
-            ),
-            ListingRequest(
-                listing_id=listings[2].id,
-                company_name="Eko Kağıt Sanayi",
-                company_city="Ankara",
-                message="Düzenli karton ve kağıt atığı tedariki arıyoruz. Uzun vadeli iş birliği için iletişime geçebilir miyiz?",
-                created_at=datetime.utcnow() - timedelta(days=2),
-            ),
-            ListingRequest(
-                listing_id=listings[4].id,
-                company_name="PET Dönüşüm Merkezi",
-                company_city="İstanbul",
-                message="Şeffaf PET atıklarınız için kg başı fiyat teklifi sunmak isteriz.",
-                created_at=datetime.utcnow() - timedelta(days=1, hours=3),
-            ),
-            ListingRequest(
-                listing_id=listings[7].id,
-                company_name="Tekno Geri Dönüşüm",
-                company_city="İzmir",
-                message="Elektronik kart atıklarını parçalayarak metal geri kazanımı yapıyoruz. Yerinde inceleme talep ediyoruz.",
-                created_at=datetime.utcnow() - timedelta(hours=10),
-            ),
-        ]
-
-        db.session.add_all(requests)
+        # Listeleme için yardımcı: tags boş kalanları güncelle
+        updated_tags = 0
+        for l in Listing.query.all():
+            if not l.tags_list:
+                ai_result = analyze_listing_text(l.description or "")
+                tags = ai_result.get("tags") or []
+                l.tags = json.dumps(tags, ensure_ascii=False)
+                updated_tags += 1
         db.session.commit()
 
-        print("Seed verileri başarıyla eklendi.")
+        # Demo talepler (isteğe bağlı; tekrar çalıştırıldığında duplicate olmasın)
+        pet_listing = Listing.query.filter_by(
+            title="Şeffaf PET Şişe Atıkları",
+            firm_id=firm_by_email["anadolu@demo.com"].id,
+        ).first()
+        if pet_listing:
+            demo_requests = [
+                {
+                    "listing_id": pet_listing.id,
+                    "company_name": "PET Dönüşüm Merkezi",
+                    "company_city": "İstanbul",
+                    "message": "Şeffaf PET atıklarınız için kg başı fiyat teklifi sunmak isteriz.",
+                    "created_at": datetime.utcnow() - timedelta(days=1, hours=3),
+                },
+            ]
+
+            for dr in demo_requests:
+                exists = ListingRequest.query.filter_by(
+                    listing_id=dr["listing_id"],
+                    company_name=dr["company_name"],
+                    message=dr["message"],
+                ).first()
+                if exists:
+                    continue
+
+                req = ListingRequest(
+                    listing_id=dr["listing_id"],
+                    company_name=dr["company_name"],
+                    company_city=dr["company_city"],
+                    message=dr["message"],
+                    created_at=dr["created_at"],
+                )
+                db.session.add(req)
+
+            db.session.commit()
+
+        print(f"Seed tamamlandı. Etiket güncellemeleri: {updated_tags}")
 
 
 if __name__ == "__main__":

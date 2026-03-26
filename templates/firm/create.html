@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-7 mx-auto">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="section-title mb-3">Firma Bilgilerinizi Oluşturun</h2>
+        <p class="text-muted small mb-4">
+          İlan açabilmek için firma bilgilerinizi kaydetmelisiniz.
+        </p>
+
+        <form method="post">
+          <div class="mb-3">
+            <label for="name" class="form-label">Firma Adı</label>
+            <input
+              type="text"
+              class="form-control"
+              id="name"
+              name="name"
+              value="{{ form_data.get('name', '') }}"
+              required
+            />
+          </div>
+
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="city" class="form-label">Şehir</label>
+              <input
+                type="text"
+                class="form-control"
+                id="city"
+                name="city"
+                value="{{ form_data.get('city', '') }}"
+                required
+              />
+            </div>
+
+            <div class="col-md-8 mb-3">
+              <label for="sector" class="form-label">Sektör</label>
+              <input
+                type="text"
+                class="form-control"
+                id="sector"
+                name="sector"
+                value="{{ form_data.get('sector', '') }}"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="description" class="form-label">Firma Açıklaması (Opsiyonel)</label>
+            <textarea
+              class="form-control"
+              id="description"
+              name="description"
+              rows="3"
+            >{{ form_data.get('description', '') }}</textarea>
+          </div>
+
+          <div class="mb-3">
+            <label for="phone" class="form-label">İletişim Telefonu (Opsiyonel)</label>
+            <input
+              type="text"
+              class="form-control"
+              id="phone"
+              name="phone"
+              value="{{ form_data.get('phone', '') }}"
+            />
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            Firma Bilgilerini Kaydet
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

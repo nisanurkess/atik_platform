@@ -27,6 +27,14 @@
         </li>
         <li class="nav-item">
           <a
+            class="nav-link {% if request.endpoint == 'listings' %}active{% endif %}"
+            href="{{ url_for('listings') }}"
+          >
+            İlanlar
+          </a>
+        </li>
+        <li class="nav-item">
+          <a
             class="nav-link {% if request.endpoint == 'create_listing' %}active{% endif %}"
             href="{{ url_for('create_listing') }}"
           >
@@ -34,14 +42,39 @@
           </a>
         </li>
         <li class="nav-item">
-          <a
-            class="nav-link {% if request.endpoint == 'listings' %}active{% endif %}"
-            href="{{ url_for('listings') }}"
-          >
-            İlanlar
-          </a>
+          {% if current_user.is_authenticated %}
+            <a
+              class="nav-link {% if request.endpoint in ['firm_detail', 'firm_edit', 'firm_create'] %}active{% endif %}"
+              href="{{ url_for('firm_detail') }}"
+            >
+              Firma Bilgilerim
+            </a>
+          {% endif %}
         </li>
       </ul>
+
+      <div class="d-flex align-items-center gap-2 ms-lg-3 mt-2 mt-lg-0">
+        {% if current_user.is_authenticated %}
+          <form method="post" action="{{ url_for('logout') }}">
+            <button class="btn btn-outline-secondary btn-sm" type="submit">
+              Çıkış Yap
+            </button>
+          </form>
+        {% else %}
+          <a
+            class="btn btn-outline-secondary btn-sm"
+            href="{{ url_for('login') }}"
+          >
+            Giriş Yap
+          </a>
+          <a
+            class="btn btn-primary btn-sm"
+            href="{{ url_for('register') }}"
+          >
+            Kayıt Ol
+          </a>
+        {% endif %}
+      </div>
     </div>
   </div>
 </nav>

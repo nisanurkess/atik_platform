@@ -7,14 +7,22 @@
       <div class="card-body">
         <h2 class="section-title mb-1">{{ listing.title }}</h2>
         <p class="text-muted small mb-3">
-          {{ listing.company.name }} • {{ listing.city }} •
+          {{ listing.firm.name if listing.firm else "—" }} • {{ listing.firm.city if listing.firm else listing.city }} •
           {{ listing.created_at.strftime('%d.%m.%Y %H:%M') }}
         </p>
+
         <div class="mb-3">
           <span class="badge bg-secondary me-1">{{ listing.category }}</span>
           <span class="badge bg-light text-dark border me-1">
             Miktar: {{ listing.quantity }}
           </span>
+
+          {% if listing.price is not none %}
+            <span class="badge bg-success me-1">
+              Fiyat: {{ listing.price }}
+            </span>
+          {% endif %}
+
           <span class="badge bg-{{ 'success' if listing.status == 'Aktif' else 'secondary' }}">
             {{ listing.status }}
           </span>
@@ -52,9 +60,9 @@
 
         <h5 class="mb-1">Firma Bilgileri</h5>
         <p class="mb-0">
-          <strong>{{ listing.company.name }}</strong><br>
-          Sektör: {{ listing.company.sector }}<br>
-          Şehir: {{ listing.company.city }}
+          <strong>{{ listing.firm.name if listing.firm else "—" }}</strong><br>
+          Sektör: {{ listing.firm.sector if listing.firm else "—" }}<br>
+          Şehir: {{ listing.firm.city if listing.firm else listing.city }}
         </p>
       </div>
     </div>
@@ -77,9 +85,7 @@
             {% endfor %}
           </div>
         {% else %}
-          <p class="text-muted mb-0">
-            Bu ilana henüz talep gelmemiş.
-          </p>
+          <p class="text-muted mb-0">Bu ilana henüz talep gelmemiş.</p>
         {% endif %}
       </div>
     </div>
@@ -98,7 +104,7 @@
                   <div class="me-2">
                     <h6 class="mb-1">{{ item.listing.title }}</h6>
                     <div class="text-muted small">
-                      {{ item.listing.company.name }} • {{ item.listing.city }} •
+                      {{ item.listing.firm.name if item.listing.firm else "—" }} • {{ item.listing.city }} •
                       {{ item.listing.category }}
                     </div>
                   </div>
@@ -135,6 +141,7 @@
         <p class="text-muted small">
           Kendi firmanız adına bu ilan için mesaj bırakabilirsiniz.
         </p>
+
         <form method="post" class="request-form">
           <div class="mb-3">
             <label for="company_name" class="form-label">Firma Adı</label>
@@ -144,8 +151,9 @@
               id="company_name"
               name="company_name"
               required
-            >
+            />
           </div>
+
           <div class="mb-3">
             <label for="company_city" class="form-label">Firma Şehri</label>
             <input
@@ -154,8 +162,9 @@
               id="company_city"
               name="company_city"
               required
-            >
+            />
           </div>
+
           <div class="mb-3">
             <label for="message" class="form-label">Mesaj</label>
             <textarea
@@ -166,6 +175,7 @@
               required
             ></textarea>
           </div>
+
           <button type="submit" class="btn btn-primary w-100">
             Talep Gönder
           </button>

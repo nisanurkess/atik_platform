@@ -2,34 +2,20 @@
 
 {% block content %}
 <div class="row">
-  <div class="col-lg-8 mx-auto">
-    <div class="card shadow-sm">
+  <div class="col-lg-9 mx-auto">
+    <div class="card shadow-sm mb-4">
       <div class="card-body">
-        <h2 class="section-title mb-3">Yeni İlan Oluştur</h2>
+        <h2 class="section-title mb-1">Yeni İlan Oluştur</h2>
         <p class="text-muted small mb-4">
-          Mevcut bir firma adına yeni bir atık ilanı oluşturabilirsiniz.
+          İlanınızı, giriş yaptığınız hesaba bağlı firma adıyla oluşturursunuz.
         </p>
 
-        <form method="post" class="listing-form">
-          <div class="mb-3">
-            <label for="company_id" class="form-label">Firma</label>
-            <select
-              class="form-select"
-              id="company_id"
-              name="company_id"
-              required
-            >
-              <option value="">Firma seçin...</option>
-              {% for company in companies %}
-                <option value="{{ company.id }}"
-                  {% if form_data.get('company_id')|int == company.id %}selected{% endif %}
-                >
-                  {{ company.name }} ({{ company.city }})
-                </option>
-              {% endfor %}
-            </select>
-          </div>
+        <div class="alert alert-info border">
+          <div class="fw-semibold mb-1">{{ firm.name }}</div>
+          <div class="small text-muted">{{ firm.sector }} • {{ firm.city }}</div>
+        </div>
 
+        <form method="post" class="listing-form">
           <div class="mb-3">
             <label for="title" class="form-label">İlan Başlığı</label>
             <input
@@ -39,7 +25,7 @@
               name="title"
               required
               value="{{ form_data.get('title', '') }}"
-            >
+            />
           </div>
 
           <div class="mb-3">
@@ -51,6 +37,52 @@
               rows="4"
               required
             >{{ form_data.get('description', '') }}</textarea>
+
+            <div class="alert alert-light border mt-3 mb-2">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                  <div class="fw-semibold">AI ile iyileştir</div>
+                  <div class="text-muted small">İsteğe bağlı öneri üretir. Kullanmak senin tercihin.</div>
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    id="ai_improve_button"
+                  >
+                    AI ile iyileştir
+                  </button>
+                </div>
+              </div>
+
+              <div id="ai_improve_root" data-endpoint="{{ url_for('ai_improve_description') }}"></div>
+              <div id="ai_improve_loading" class="text-muted small mt-2" style="display:none;">
+                İyileştirme yapılıyor...
+              </div>
+              <div
+                id="ai_improve_error"
+                class="alert alert-danger mt-2"
+                style="display:none;"
+              ></div>
+
+              <div id="ai_improve_output" style="display:none;" class="mt-3">
+                <div class="text-muted small mb-2">Önerilen açıklama</div>
+                <textarea
+                  id="ai_improve_suggestion"
+                  class="form-control"
+                  rows="4"
+                  readonly
+                ></textarea>
+                <button
+                  type="button"
+                  id="ai_use_improved_button"
+                  class="btn btn-sm btn-primary mt-2"
+                  disabled
+                >
+                  Bunu kullan
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="mb-3">
@@ -91,9 +123,7 @@
               >
                 <option value="">Kategori seçin...</option>
                 {% for cat in CATEGORIES %}
-                  <option value="{{ cat }}"
-                    {% if form_data.get('category') == cat %}selected{% endif %}
-                  >
+                  <option value="{{ cat }}" {% if form_data.get('category') == cat %}selected{% endif %}>
                     {{ cat }}
                   </option>
                 {% endfor %}
@@ -110,25 +140,25 @@
                 placeholder="Örn: 3 ton"
                 required
                 value="{{ form_data.get('quantity', '') }}"
-              >
+              />
             </div>
 
             <div class="col-md-4 mb-3">
-              <label for="city" class="form-label">Şehir</label>
+              <label for="price" class="form-label">Fiyat (Opsiyonel)</label>
               <input
                 type="text"
                 class="form-control"
-                id="city"
-                name="city"
-                required
-                value="{{ form_data.get('city', '') }}"
-              >
+                id="price"
+                name="price"
+                placeholder="Örn: 1250 veya 1250,50"
+                value="{{ form_data.get('price', '') }}"
+              />
             </div>
           </div>
 
           <div class="mb-3">
             <p class="text-muted small mb-0">
-              Durum: <strong>Aktif</strong> (varsayılan olarak atanır)
+              Durum: <strong>Aktif</strong> (varsayılan)
             </p>
           </div>
 
@@ -145,6 +175,8 @@
     </div>
   </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/ai_listing.js') }}" defer></script>
 
 <script>
   (function () {
@@ -286,5 +318,6 @@
     }
   })();
 </script>
+
 {% endblock %}
 

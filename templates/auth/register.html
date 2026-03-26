@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-6 mx-auto">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="section-title mb-3">Kayıt Ol</h2>
+
+        <form method="post">
+          <div class="mb-3">
+            <label for="full_name" class="form-label">Ad Soyad</label>
+            <input
+              type="text"
+              class="form-control"
+              id="full_name"
+              name="full_name"
+              value="{{ form_data.get('full_name', '') }}"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="email" class="form-label">E-posta</label>
+            <input
+              type="email"
+              class="form-control"
+              id="email"
+              name="email"
+              value="{{ form_data.get('email', '') }}"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label">Şifre</label>
+            <input
+              type="password"
+              class="form-control"
+              id="password"
+              name="password"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="password2" class="form-label">Şifre Tekrar</label>
+            <input
+              type="password"
+              class="form-control"
+              id="password2"
+              name="password2"
+              required
+            />
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            Kayıt Ol
+          </button>
+
+          <div class="text-center mt-3">
+            <small class="text-muted">
+              Zaten hesabınız var mı?
+              <a href="{{ url_for('login') }}">Giriş yap</a>
+            </small>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

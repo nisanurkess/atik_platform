@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-6 mx-auto">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="section-title mb-3">Giriş Yap</h2>
+
+        <form method="post">
+          <div class="mb-3">
+            <label for="email" class="form-label">E-posta</label>
+            <input
+              type="email"
+              class="form-control"
+              id="email"
+              name="email"
+              value="{{ form_data.get('email', '') }}"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label">Şifre</label>
+            <input
+              type="password"
+              class="form-control"
+              id="password"
+              name="password"
+              required
+            />
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            Giriş
+          </button>
+
+          <div class="text-center mt-3">
+            <small class="text-muted">
+              Hesabınız yok mu?
+              <a href="{{ url_for('register') }}">Kayıt olun</a>
+            </small>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
