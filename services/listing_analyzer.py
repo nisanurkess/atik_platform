@@ -1,7 +1,11 @@
 from typing import Dict, List, Optional
 
 from services.local_analyzer import extract_tags_from_text, predict_category_from_text
-from services.openai_listing import analyze_listing_text_openai, use_openai_for_listings
+from services.openai_listing import (
+    _derive_summary_title_from_body,
+    analyze_listing_text_openai,
+    use_openai_for_listings,
+)
 
 
 def analyze_listing_text(
@@ -22,12 +26,13 @@ def analyze_listing_text(
 
     predicted_category, confidence = predict_category_from_text(local_source)
     tags: List[str] = extract_tags_from_text(local_source, max_tags=5)
+    short_summary, suggested_title = _derive_summary_title_from_body(local_source)
 
     return {
         "predicted_category": predicted_category,
         "confidence": confidence,
         "tags": tags,
-        "short_summary": "",
-        "suggested_title": "",
+        "short_summary": short_summary,
+        "suggested_title": suggested_title,
     }
 
