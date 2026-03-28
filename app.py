@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 
 from dotenv import load_dotenv
+from openai import APIError, AuthenticationError, OpenAI, RateLimitError
 from flask import (
     Flask,
     abort,
@@ -130,6 +131,74 @@ def create_app():
     @app.context_processor
     def inject_globals():
         return {"CATEGORIES": CATEGORIES}
+
+    @app.route("/test-ai")
+    def test_ai():
+        """
+        OpenAI bağlantısını test eder. API anahtarı sadece sunucu tarafında kullanılır;
+        yanıtta asla anahtar dönülmez.
+        """
+        api_key = (os.environ.get("OPENAI_API_KEY") or "").strip()
+        if not api_key or api_key == "your_api_key_here":
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": "OPENAI_API_KEY eksik veya geçersiz. .env dosyasına gerçek anahtarınızı yazın.",
+                    }
+                ),
+                400,
+            )
+
+        prompt = "Merhaba, sistem çalışıyor mu? Kısa cevap ver."
+        try:
+            client = OpenAI(api_key=api_key)
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+            )
+            reply = (response.choices[0].message.content or "").strip()
+            return jsonify({"ok": True, "reply": reply})
+        except AuthenticationError:
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": "OpenAI kimlik doğrulama hatası. API anahtarını kontrol edin.",
+                    }
+                ),
+                401,
+            )
+        except RateLimitError:
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": "OpenAI istek limiti aşıldı. Bir süre sonra tekrar deneyin.",
+                    }
+                ),
+                429,
+            )
+        except APIError as exc:
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": f"OpenAI API hatası: {str(exc)}",
+                    }
+                ),
+                502,
+            )
+        except Exception as exc:
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": f"Beklenmeyen hata: {type(exc).__name__}",
+                    }
+                ),
+                500,
+            )
 
     @app.route("/ai/analyze", methods=["POST"])
     def ai_analyze_listing_text():
