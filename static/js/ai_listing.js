@@ -11,6 +11,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const suggestionEl = document.getElementById("ai_improve_suggestion");
   const useBtn = document.getElementById("ai_use_improved_button");
   const summaryNoteEl = document.getElementById("ai_improve_summary_note");
+  const improveTitleWrap = document.getElementById("ai_improve_title_wrap");
+  const improveTitleText = document.getElementById("ai_improve_title_text");
+  const improveTitleApply = document.getElementById("ai_improve_title_apply");
+  const titleInputEl = document.getElementById("title");
 
   if (!endpoint || !descriptionEl || !improveBtn || !suggestionEl || !useBtn) return;
 
@@ -47,6 +51,12 @@ document.addEventListener("DOMContentLoaded", () => {
       summaryNoteEl.textContent = "";
       summaryNoteEl.style.display = "none";
     }
+    if (improveTitleWrap) {
+      improveTitleWrap.style.display = "none";
+    }
+    if (improveTitleText) {
+      improveTitleText.textContent = "";
+    }
 
     try {
       const resp = await fetch(endpoint, {
@@ -68,7 +78,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await resp.json();
       const improved = data.improved_description || "";
-      const shortSummary = (data.short_summary || "").trim();
+      const shortSummary = (
+        data.short_summary ||
+        data.summary ||
+        ""
+      ).trim();
+      const suggestedTitle = (
+        data.suggested_title ||
+        data.title_suggestion ||
+        ""
+      ).trim();
 
       suggestionEl.value = improved;
       if (summaryNoteEl) {
@@ -78,6 +97,15 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           summaryNoteEl.textContent = "";
           summaryNoteEl.style.display = "none";
+        }
+      }
+      if (improveTitleWrap && improveTitleText) {
+        if (suggestedTitle) {
+          improveTitleText.textContent = suggestedTitle;
+          improveTitleWrap.style.display = "block";
+        } else {
+          improveTitleText.textContent = "";
+          improveTitleWrap.style.display = "none";
         }
       }
       if (outputEl) outputEl.style.display = "block";
@@ -95,5 +123,13 @@ document.addEventListener("DOMContentLoaded", () => {
     descriptionEl.value = text;
     clearError();
   });
+
+  if (improveTitleApply && titleInputEl && improveTitleText) {
+    improveTitleApply.addEventListener("click", () => {
+      const t = (improveTitleText.textContent || "").trim();
+      if (!t) return;
+      titleInputEl.value = t;
+    });
+  }
 });
 

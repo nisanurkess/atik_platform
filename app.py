@@ -201,13 +201,15 @@ def create_app():
                     "confidence": 0,
                     "tags": [],
                     "short_summary": "",
+                    "suggested_title": "",
                 }
             )
 
         text_for_ai = (
             f"Başlık: {title}\nAçıklama: {description}" if title else description
         )
-        result = analyze_listing_text(text_for_ai)
+        # Yerel yedek: keyword eşleşmesi yalnızca gerçek açıklama üzerinde çalışsın
+        result = analyze_listing_text(text_for_ai, local_text=description)
         return jsonify(result)
 
     @app.route("/ai/improve-description", methods=["POST"])

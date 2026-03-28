@@ -9,6 +9,7 @@ class ImproveResult(TypedDict):
     suggested_category: str
     tags: List[str]
     short_summary: str
+    suggested_title: str
 
 
 def improve_listing_description(text: str) -> ImproveResult:
@@ -23,6 +24,7 @@ def improve_listing_description(text: str) -> ImproveResult:
             "suggested_category": "Diğer",
             "tags": [],
             "short_summary": "",
+            "suggested_title": "",
         }
 
     if use_openai_for_listings():
@@ -33,6 +35,7 @@ def improve_listing_description(text: str) -> ImproveResult:
                 "suggested_category": str(oa["suggested_category"]),
                 "tags": list(oa["tags"]),
                 "short_summary": str(oa.get("short_summary", "")),
+                "suggested_title": str(oa.get("suggested_title", "")),
             }
 
     predicted_category, _conf = predict_category_from_text(original)
@@ -53,4 +56,5 @@ def improve_listing_description(text: str) -> ImproveResult:
         "suggested_category": suggested_category,
         "tags": tags,
         "short_summary": "",
+        "suggested_title": "",
     }

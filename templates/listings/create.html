@@ -26,6 +26,21 @@
               required
               value="{{ form_data.get('title', '') }}"
             />
+            <div
+              id="ai_analyze_title_wrap"
+              class="alert alert-light border py-2 px-3 mt-2 mb-0"
+              style="display:none;"
+            >
+              <div class="text-muted small mb-1">Önerilen başlık</div>
+              <div class="fw-semibold mb-2" id="ai_analyze_title_text"></div>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                id="ai_analyze_title_apply"
+              >
+                Başlığa uygula
+              </button>
+            </div>
           </div>
 
           <div class="mb-3">
@@ -78,6 +93,21 @@
                   class="text-muted small mt-2"
                   style="display:none;"
                 ></div>
+                <div
+                  id="ai_improve_title_wrap"
+                  class="mt-2"
+                  style="display:none;"
+                >
+                  <div class="text-muted small mb-1">Önerilen başlık</div>
+                  <div class="fw-semibold small mb-2" id="ai_improve_title_text"></div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    id="ai_improve_title_apply"
+                  >
+                    Başlığa uygula
+                  </button>
+                </div>
                 <button
                   type="button"
                   id="ai_use_improved_button"
@@ -198,14 +228,25 @@
     const tagsInput = document.getElementById("tags_input");
     const summaryHintEl = document.getElementById("ai_short_summary_hint");
     const titleEl = document.getElementById("title");
+    const analyzeTitleWrap = document.getElementById("ai_analyze_title_wrap");
+    const analyzeTitleText = document.getElementById("ai_analyze_title_text");
+    const analyzeTitleApply = document.getElementById("ai_analyze_title_apply");
 
     let manualCategory = false;
     let lastSuggestion = null;
+    let lastSuggestedTitle = "";
 
     function setNoSuggestion() {
       if (confidenceEl) {
         confidenceEl.textContent = "Açıklamayı yazdıkça öneri üretilecek.";
       }
+      if (analyzeTitleWrap) {
+        analyzeTitleWrap.style.display = "none";
+      }
+      if (analyzeTitleText) {
+        analyzeTitleText.textContent = "";
+      }
+      lastSuggestedTitle = "";
       if (summaryHintEl) {
         summaryHintEl.textContent = "";
         summaryHintEl.style.display = "none";
@@ -248,15 +289,35 @@
 
         const data = await resp.json();
         const suggestedCategory = data.predicted_category || "Diğer";
-        const confidence = data.confidence || 0;
+        const confidence = Number(data.confidence) || 0;
         const tags = data.tags || [];
-        const shortSummary = (data.short_summary || "").trim();
+        const shortSummary = (
+          data.short_summary ||
+          data.summary ||
+          ""
+        ).trim();
+        const suggestedTitle = (
+          data.suggested_title ||
+          data.title_suggestion ||
+          ""
+        ).trim();
+        lastSuggestedTitle = suggestedTitle;
 
         lastSuggestion = {
           suggestedCategory,
           confidence,
           tags,
         };
+
+        if (analyzeTitleWrap && analyzeTitleText) {
+          if (suggestedTitle) {
+            analyzeTitleText.textContent = suggestedTitle;
+            analyzeTitleWrap.style.display = "block";
+          } else {
+            analyzeTitleText.textContent = "";
+            analyzeTitleWrap.style.display = "none";
+          }
+        }
 
         if (summaryHintEl) {
           if (shortSummary) {
@@ -268,14 +329,27 @@
           }
         }
 
-        if (confidence > 0) {
+        const hasAiSignal =
+          confidence > 0 ||
+          shortSummary ||
+          suggestedTitle ||
+          (Array.isArray(tags) && tags.length > 0);
+
+        if (hasAiSignal) {
           if (confidenceEl) {
-            confidenceEl.textContent =
-              "Önerilen kategori: " +
-              suggestedCategory +
-              " (" +
-              confidence +
-              "% güven)";
+            if (confidence > 0) {
+              confidenceEl.textContent =
+                "Önerilen kategori: " +
+                suggestedCategory +
+                " (" +
+                confidence +
+                "% güven)";
+            } else {
+              confidenceEl.textContent =
+                "Önerilen kategori: " +
+                suggestedCategory +
+                " (AI önerisi — özet veya etiketlere bakın)";
+            }
           }
           if (applyBtn) {
             applyBtn.disabled = false;
@@ -325,9 +399,16 @@
 
     if (applyBtn) {
       applyBtn.addEventListener("click", function () {
-        if (!lastSuggestion || !(lastSuggestion.confidence > 0)) return;
+        if (!lastSuggestion) return;
         categorySelect.value = lastSuggestion.suggestedCategory;
         manualCategory = true;
+      });
+    }
+
+    if (analyzeTitleApply && titleEl) {
+      analyzeTitleApply.addEventListener("click", function () {
+        if (!lastSuggestedTitle) return;
+        titleEl.value = lastSuggestedTitle;
       });
     }
 
