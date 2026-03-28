@@ -73,6 +73,11 @@
                   rows="4"
                   readonly
                 ></textarea>
+                <div
+                  id="ai_improve_summary_note"
+                  class="text-muted small mt-2"
+                  style="display:none;"
+                ></div>
                 <button
                   type="button"
                   id="ai_use_improved_button"
@@ -94,6 +99,11 @@
               >
                 Açıklamayı yazdıkça öneri üretilecek.
               </div>
+              <div
+                id="ai_short_summary_hint"
+                class="text-muted small mb-2"
+                style="display:none;"
+              ></div>
               <button
                 type="button"
                 class="btn btn-sm btn-outline-primary"
@@ -186,6 +196,8 @@
     const applyBtn = document.getElementById("kategori_onerisi_uygula");
     const etiketContainer = document.getElementById("etiket_onerileri");
     const tagsInput = document.getElementById("tags_input");
+    const summaryHintEl = document.getElementById("ai_short_summary_hint");
+    const titleEl = document.getElementById("title");
 
     let manualCategory = false;
     let lastSuggestion = null;
@@ -193,6 +205,10 @@
     function setNoSuggestion() {
       if (confidenceEl) {
         confidenceEl.textContent = "Açıklamayı yazdıkça öneri üretilecek.";
+      }
+      if (summaryHintEl) {
+        summaryHintEl.textContent = "";
+        summaryHintEl.style.display = "none";
       }
       if (etiketContainer) {
         etiketContainer.innerHTML = "";
@@ -218,10 +234,12 @@
       }
 
       try {
+        const title = titleEl ? (titleEl.value || "").trim() : "";
+
         const resp = await fetch("{{ url_for('ai_analyze_listing_text') }}", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ description: text }),
+          body: JSON.stringify({ description: text, title: title }),
         });
 
         if (!resp.ok) {
@@ -232,12 +250,23 @@
         const suggestedCategory = data.predicted_category || "Diğer";
         const confidence = data.confidence || 0;
         const tags = data.tags || [];
+        const shortSummary = (data.short_summary || "").trim();
 
         lastSuggestion = {
           suggestedCategory,
           confidence,
           tags,
         };
+
+        if (summaryHintEl) {
+          if (shortSummary) {
+            summaryHintEl.textContent = "Kısa özet: " + shortSummary;
+            summaryHintEl.style.display = "block";
+          } else {
+            summaryHintEl.textContent = "";
+            summaryHintEl.style.display = "none";
+          }
+        }
 
         if (confidence > 0) {
           if (confidenceEl) {
@@ -305,6 +334,13 @@
     let timer = null;
     if (descriptionEl) {
       descriptionEl.addEventListener("input", function () {
+        clearTimeout(timer);
+        timer = setTimeout(analyze, 500);
+      });
+    }
+
+    if (titleEl) {
+      titleEl.addEventListener("input", function () {
         clearTimeout(timer);
         timer = setTimeout(analyze, 500);
       });

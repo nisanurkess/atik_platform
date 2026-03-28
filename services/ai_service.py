@@ -1,22 +1,19 @@
-import os
-from typing import Dict, List, TypedDict
+from typing import List, TypedDict
 
-from services.listing_analyzer import analyze_listing_text
+from services.local_analyzer import extract_tags_from_text, predict_category_from_text
+from services.openai_listing import improve_listing_description_openai, use_openai_for_listings
 
 
 class ImproveResult(TypedDict):
     improved_description: str
     suggested_category: str
     tags: List[str]
+    short_summary: str
 
 
 def improve_listing_description(text: str) -> ImproveResult:
     """
-    AI iyileştirme servisi (mock).
-
-    Not:
-    - Şu an gerçek bir dış API çağırmıyoruz.
-    - İleride `OPENAI_API_KEY` varsa burada OpenAI/benzeri bir provider'a geçmek kolay olacak.
+    Açıklama iyileştirme: OpenAI açıksa gerçek API; değilse veya hata olursa yerel öneri (mock metin).
     """
 
     original = (text or "").strip()
@@ -25,17 +22,23 @@ def improve_listing_description(text: str) -> ImproveResult:
             "improved_description": "",
             "suggested_category": "Diğer",
             "tags": [],
+            "short_summary": "",
         }
 
-    # Placeholder: gelecekte gerçek API entegrasyonu buraya gelecek.
-    # openai_key = os.environ.get("OPENAI_API_KEY")
-    _ = os.environ.get("OPENAI_API_KEY")
+    if use_openai_for_listings():
+        oa = improve_listing_description_openai(original)
+        if oa is not None:
+            return {
+                "improved_description": str(oa["improved_description"]),
+                "suggested_category": str(oa["suggested_category"]),
+                "tags": list(oa["tags"]),
+                "short_summary": str(oa.get("short_summary", "")),
+            }
 
-    analysis = analyze_listing_text(original)
-    suggested_category = analysis.get("predicted_category") or "Diğer"
-    tags = analysis.get("tags") or []
+    predicted_category, _conf = predict_category_from_text(original)
+    tags = extract_tags_from_text(original, max_tags=5)
+    suggested_category = predicted_category or "Diğer"
 
-    # Basit, daha profesyonel görünümlü mock metin üretimi.
     improved = original
     if not improved.endswith("."):
         improved += "."
@@ -49,5 +52,5 @@ def improve_listing_description(text: str) -> ImproveResult:
         "improved_description": improved_description,
         "suggested_category": suggested_category,
         "tags": tags,
+        "short_summary": "",
     }
-

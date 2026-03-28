@@ -1,26 +1,28 @@
-import os
 from typing import Dict, List
 
 from services.local_analyzer import extract_tags_from_text, predict_category_from_text
+from services.openai_listing import analyze_listing_text_openai, use_openai_for_listings
 
 
 def analyze_listing_text(description: str) -> Dict[str, object]:
     """
-    İleride Hugging Face gibi farklı provider'lara bağlanabilmesi için tek giriş noktası.
-    Şu an sadece lokal ve ücretsiz keyword mantığı kullanıyoruz.
+    Tek giriş noktası: OPENAI_API_KEY + LISTING_ANALYZER_PROVIDER (auto/openai) ise OpenAI;
+    aksi halde veya API başarısızsa yerel anahtar kelime analizi.
     """
-    _provider = os.environ.get("LISTING_ANALYZER_PROVIDER", "local").lower().strip()
+    text = (description or "").strip()
 
-    # Ücretli/harici servis kullanmıyoruz; HF opsiyonunu mimari olarak bırakıyoruz.
-    # Provider değişirse bile şu an lokal döndürür.
-    _ = _provider
+    if use_openai_for_listings():
+        ai = analyze_listing_text_openai(text)
+        if ai is not None:
+            return ai
 
-    predicted_category, confidence = predict_category_from_text(description)
-    tags: List[str] = extract_tags_from_text(description, max_tags=5)
+    predicted_category, confidence = predict_category_from_text(text)
+    tags: List[str] = extract_tags_from_text(text, max_tags=5)
 
     return {
         "predicted_category": predicted_category,
         "confidence": confidence,
         "tags": tags,
+        "short_summary": "",
     }
 

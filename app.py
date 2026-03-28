@@ -25,21 +25,9 @@ from sqlalchemy import text as sql_text
 from extensions import login_manager
 from models import Firm, Listing, ListingRequest, User, db
 from services.ai_service import improve_listing_description
+from services.categories import CATEGORIES
 from services.listing_analyzer import analyze_listing_text
 from services.recommender import recommend_similar_listings
-
-# Sabit kategori listesi
-CATEGORIES = [
-    "Plastik",
-    "Metal",
-    "Kağıt",
-    "Cam",
-    "Organik",
-    "Tekstil",
-    "Elektronik",
-    "Kimyasal",
-    "Diğer",
-]
 
 
 def _ensure_sqlite_column(table_name: str, column_name: str, alter_sql: str) -> None:
@@ -204,13 +192,22 @@ def create_app():
     def ai_analyze_listing_text():
         payload = request.get_json(silent=True) or {}
         description = (payload.get("description") or "").strip()
+        title = (payload.get("title") or "").strip()
 
         if not description:
             return jsonify(
-                {"predicted_category": "Diğer", "confidence": 0, "tags": []}
+                {
+                    "predicted_category": "Diğer",
+                    "confidence": 0,
+                    "tags": [],
+                    "short_summary": "",
+                }
             )
 
-        result = analyze_listing_text(description)
+        text_for_ai = (
+            f"Başlık: {title}\nAçıklama: {description}" if title else description
+        )
+        result = analyze_listing_text(text_for_ai)
         return jsonify(result)
 
     @app.route("/ai/improve-description", methods=["POST"])

@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const outputEl = document.getElementById("ai_improve_output");
   const suggestionEl = document.getElementById("ai_improve_suggestion");
   const useBtn = document.getElementById("ai_use_improved_button");
+  const summaryNoteEl = document.getElementById("ai_improve_summary_note");
 
   if (!endpoint || !descriptionEl || !improveBtn || !suggestionEl || !useBtn) return;
 
@@ -42,6 +43,10 @@ document.addEventListener("DOMContentLoaded", () => {
     setLoading(true);
     useBtn.disabled = true;
     if (outputEl) outputEl.style.display = "none";
+    if (summaryNoteEl) {
+      summaryNoteEl.textContent = "";
+      summaryNoteEl.style.display = "none";
+    }
 
     try {
       const resp = await fetch(endpoint, {
@@ -63,8 +68,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await resp.json();
       const improved = data.improved_description || "";
+      const shortSummary = (data.short_summary || "").trim();
 
       suggestionEl.value = improved;
+      if (summaryNoteEl) {
+        if (shortSummary) {
+          summaryNoteEl.textContent = "Kısa özet: " + shortSummary;
+          summaryNoteEl.style.display = "block";
+        } else {
+          summaryNoteEl.textContent = "";
+          summaryNoteEl.style.display = "none";
+        }
+      }
       if (outputEl) outputEl.style.display = "block";
       useBtn.disabled = false;
     } catch (err) {
