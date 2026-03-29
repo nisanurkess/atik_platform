@@ -23,10 +23,17 @@ class User(UserMixin, db.Model):
     firm = db.relationship("Firm", backref="user", uselist=False, lazy=True)
 
     def set_password(self, password: str) -> None:
-        self.password_hash = generate_password_hash(password)
+        # scrypt: Werkzeug 3 varsayılanı; pbkdf2 ile üretilmiş eski kayıtlar da check_password_hash ile doğrulanır
+        self.password_hash = generate_password_hash(password, method="scrypt")
 
     def check_password(self, password: str) -> bool:
-        return check_password_hash(self.password_hash, password)
+        h = self.password_hash or ""
+        if not h:
+            return False
+        try:
+            return check_password_hash(h, password)
+        except (ValueError, TypeError):
+            return False
 
     def __repr__(self) -> str:
         return f"<User {self.email}>"

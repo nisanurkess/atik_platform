@@ -21,6 +21,7 @@ from flask_login import (
     logout_user,
 )
 from sqlalchemy import text as sql_text
+from sqlalchemy.exc import IntegrityError
 
 from extensions import login_manager
 from models import Firm, Listing, ListingRequest, User, db
@@ -28,6 +29,7 @@ from services.ai_service import improve_listing_description
 from services.categories import CATEGORIES
 from services.listing_analyzer import analyze_listing_text
 from services.recommender import recommend_similar_listings
+from utils.auth_helpers import normalize_email, normalize_password_input
 
 
 def _ensure_sqlite_column(table_name: str, column_name: str, alter_sql: str) -> None:
@@ -72,9 +74,10 @@ def create_app():
         if not user_id:
             return None
         try:
-            return User.query.get(int(user_id))
-        except Exception:
+            pk = int(user_id)
+        except (TypeError, ValueError):
             return None
+        return db.session.get(User, pk)
 
     # Tablo oluşturma + eski DB için basit şema eklemeleri
     with app.app_context():
@@ -251,9 +254,9 @@ def create_app():
     def register():
         if request.method == "POST":
             full_name = (request.form.get("full_name") or "").strip()
-            email = (request.form.get("email") or "").strip().lower()
-            password = request.form.get("password") or ""
-            password2 = request.form.get("password2") or ""
+            email = normalize_email(request.form.get("email") or "")
+            password = normalize_password_input(request.form.get("password") or "")
+            password2 = normalize_password_input(request.form.get("password2") or "")
 
             errors: list[str] = []
             if not full_name:
@@ -262,6 +265,8 @@ def create_app():
                 errors.append("E-posta zorunludur.")
             if not password:
                 errors.append("Şifre boş olamaz.")
+            if len(password) < 6:
+                errors.append("Şifre en az 6 karakter olmalıdır.")
             if password != password2:
                 errors.append("Şifre tekrar eşleşmiyor.")
 
@@ -280,7 +285,19 @@ def create_app():
             user = User(full_name=full_name, email=email)
             user.set_password(password)
             db.session.add(user)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                flash(
+                    "Bu e-posta ile kayıt oluşturulamadı (zaten kullanılıyor olabilir).",
+                    "danger",
+                )
+                return render_template(
+                    "auth/register.html",
+                    title="Kayıt Ol",
+                    form_data=request.form,
+                )
 
             flash("Kayıt başarılı. Giriş yapmak için lütfen giriş sayfasını ziyaret edin.", "success")
             return redirect(url_for("login"))
@@ -290,15 +307,18 @@ def create_app():
     @app.route("/login", methods=["GET", "POST"])
     def login():
         if request.method == "POST":
-            email = (request.form.get("email") or "").strip().lower()
-            password = request.form.get("password") or ""
+            email = normalize_email(request.form.get("email") or "")
+            password = normalize_password_input(request.form.get("password") or "")
 
             if not email or not password:
                 flash("E-posta ve şifre zorunludur.", "danger")
                 return render_template("auth/login.html", title="Giriş Yap", form_data=request.form)
 
             user = User.query.filter_by(email=email).first()
-            if not user or not user.check_password(password):
+            if not user:
+                flash("E-posta veya şifre hatalı.", "danger")
+                return render_template("auth/login.html", title="Giriş Yap", form_data=request.form)
+            if not user.check_password(password):
                 flash("E-posta veya şifre hatalı.", "danger")
                 return render_template("auth/login.html", title="Giriş Yap", form_data=request.form)
 

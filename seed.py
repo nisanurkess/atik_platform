@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from app import create_app
 from models import Firm, Listing, ListingRequest, User, db
 from services.listing_analyzer import analyze_listing_text
+from utils.auth_helpers import normalize_email
 
 # Bu script, örnek firma, ilan ve talep verileri ekler.
 # Tek seferlik değildir; tekrar çalıştırıldığında duplicate üretmemesi için
@@ -82,21 +83,22 @@ def seed_data():
 
         user_by_email = {}
         for u in demo_users:
-            existing_user = User.query.filter_by(email=u["email"].lower()).first()
+            em = normalize_email(u["email"])
+            existing_user = User.query.filter_by(email=em).first()
             if not existing_user:
                 existing_user = User(
                     full_name=u["full_name"],
-                    email=u["email"].lower(),
+                    email=em,
                 )
                 existing_user.set_password(demo_password)
                 db.session.add(existing_user)
                 db.session.commit()
-            user_by_email[u["email"].lower()] = existing_user
+            user_by_email[em] = existing_user
 
         # Firmaları tek kullanıcı tek firma kuralına göre ekle/güncelle
         firm_by_email = {}
         for u in demo_users:
-            user = user_by_email[u["email"].lower()]
+            user = user_by_email[normalize_email(u["email"])]
             firm = Firm.query.filter_by(user_id=user.id).first()
             if not firm:
                 firm = Firm(
@@ -110,7 +112,7 @@ def seed_data():
                 )
                 db.session.add(firm)
                 db.session.commit()
-            firm_by_email[u["email"].lower()] = firm
+            firm_by_email[normalize_email(u["email"])] = firm
 
         # Demo ilanlar (firmalara bağlı olacak)
         demo_listings = [

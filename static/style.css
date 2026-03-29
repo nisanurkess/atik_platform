@@ -1,5 +1,109 @@
-body {
+/* --- Mint / sürdürülebilirlik teması (Bootstrap üzerine) --- */
+:root {
+  --atik-mint: #3eb489;
+  --atik-mint-dark: #2d9a76;
+  --atik-mint-soft: #e8f7f1;
+  --atik-mint-muted: #c5eadb;
+  --atik-forest: #1e4d3d;
+  --bs-primary: #2d9a76;
+  --bs-primary-rgb: 45, 154, 118;
+  --bs-link-color: #248a68;
+  --bs-link-hover-color: #1d6f54;
+}
+
+body.theme-atik {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: linear-gradient(165deg, #f5fcfa 0%, #e9f7f1 38%, #f0faf7 100%);
+  color: #1a2e28;
+  min-height: 100vh;
+}
+
+/* Ana içerik hafif “kart” hissi */
+body.theme-atik main.container {
+  max-width: 1140px;
+}
+
+.atik-navbar {
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(45, 154, 118, 0.14);
+}
+
+.atik-navbar .navbar-brand {
+  color: var(--atik-forest) !important;
+}
+
+.atik-navbar .nav-link:hover {
+  color: var(--atik-mint-dark) !important;
+}
+
+.shadow-atik {
+  box-shadow: 0 8px 32px rgba(15, 90, 70, 0.08), 0 2px 8px rgba(15, 90, 70, 0.04) !important;
+}
+
+.auth-card {
+  border: 1px solid rgba(45, 154, 118, 0.12);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.auth-card .card-body {
+  padding: 2rem 1.75rem;
+}
+
+body.theme-atik .btn-primary {
+  background-color: var(--atik-mint-dark);
+  border-color: var(--atik-mint-dark);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+body.theme-atik .btn-primary:hover {
+  background-color: #258066;
+  border-color: #258066;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(45, 154, 118, 0.35);
+}
+
+body.theme-atik .btn-outline-primary {
+  color: var(--atik-mint-dark);
+  border-color: var(--atik-mint-muted);
+}
+
+body.theme-atik .btn-outline-primary:hover {
+  background-color: var(--atik-mint-soft);
+  color: var(--atik-forest);
+  border-color: var(--atik-mint-dark);
+}
+
+body.theme-atik .form-control,
+body.theme-atik .form-select {
+  border-radius: 0.55rem;
+  border-color: rgba(45, 154, 118, 0.2);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+body.theme-atik .form-control:focus,
+body.theme-atik .form-select:focus {
+  border-color: var(--atik-mint);
+  box-shadow: 0 0 0 0.2rem rgba(45, 154, 118, 0.2);
+}
+
+body.theme-atik .card {
+  border-radius: 0.9rem;
+  border-color: rgba(45, 154, 118, 0.1);
+}
+
+body.theme-atik .alert-info {
+  background-color: var(--atik-mint-soft);
+  border-color: rgba(45, 154, 118, 0.15);
+  color: var(--atik-forest);
+}
+
+body.theme-atik a {
+  font-weight: 500;
 }
 
 .page-title {
