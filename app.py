@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 from openai import APIError, AuthenticationError, OpenAI, RateLimitError
@@ -22,6 +22,7 @@ from flask_login import (
 )
 from sqlalchemy import text as sql_text
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
 
 from extensions import login_manager
 from models import Firm, Listing, ListingRequest, User, db
@@ -30,6 +31,54 @@ from services.categories import CATEGORIES
 from services.listing_analyzer import analyze_listing_text
 from services.recommender import recommend_similar_listings
 from utils.auth_helpers import normalize_email, normalize_password_input
+
+
+def dedupe_listing_request_bursts(window_seconds: int = 120) -> None:
+    """
+    Aynı ilan + aynı kullanıcı + aynı mesaj metni için kısa süre içinde oluşmuş
+    ardışık mükerrer kayıtları siler (çift tıklama / çift POST). Aynı kullanıcının
+    günler sonra tekrar gönderdiği aynı metinli talepler korunur.
+    """
+    rows = (
+        ListingRequest.query.filter(ListingRequest.user_id.isnot(None))
+        .order_by(ListingRequest.listing_id, ListingRequest.user_id, ListingRequest.created_at, ListingRequest.id)
+        .all()
+    )
+    groups: dict[tuple[int, int, str], list] = {}
+    for lr in rows:
+        msg = " ".join((lr.message or "").split())
+        key = (lr.listing_id, lr.user_id, msg)
+        groups.setdefault(key, []).append(lr)
+
+    to_delete: list[int] = []
+    for key, g in groups.items():
+        if len(g) < 2:
+            continue
+        g.sort(key=lambda r: (r.created_at, r.id))
+        kept = g[0]
+        for r in g[1:]:
+            if (r.created_at - kept.created_at).total_seconds() <= window_seconds:
+                to_delete.append(r.id)
+            else:
+                kept = r
+
+    if not to_delete:
+        return
+    for rid in to_delete:
+        obj = db.session.get(ListingRequest, rid)
+        if obj is not None:
+            db.session.delete(obj)
+    db.session.commit()
+
+
+def _safe_next_path(next_raw: str | None) -> str | None:
+    """Open redirect önlemek için sadece aynı site içi path kabul edilir."""
+    if not next_raw:
+        return None
+    n = next_raw.strip()
+    if not n.startswith("/") or n.startswith("//"):
+        return None
+    return n
 
 
 def _ensure_sqlite_column(table_name: str, column_name: str, alter_sql: str) -> None:
@@ -118,6 +167,48 @@ def create_app():
             )
         except Exception:
             pass
+
+        try:
+            _ensure_sqlite_column(
+                "requests",
+                "company_email",
+                "ALTER TABLE requests ADD COLUMN company_email VARCHAR(200)",
+            )
+        except Exception:
+            pass
+
+        try:
+            _ensure_sqlite_column(
+                "requests",
+                "user_id",
+                "ALTER TABLE requests ADD COLUMN user_id INTEGER REFERENCES users(id)",
+            )
+        except Exception:
+            pass
+
+        # Eski talepler: company_email ile kullanıcı bulunup user_id doldurulur (görünüm tutarlılığı)
+        try:
+            orphan_reqs = (
+                ListingRequest.query.filter(ListingRequest.user_id.is_(None))
+                .filter(ListingRequest.company_email.isnot(None))
+                .all()
+            )
+            for lr in orphan_reqs:
+                em = normalize_email(lr.company_email or "")
+                if not em:
+                    continue
+                u = User.query.filter_by(email=em).first()
+                if u:
+                    lr.user_id = u.id
+            if orphan_reqs:
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        try:
+            dedupe_listing_request_bursts()
+        except Exception:
+            db.session.rollback()
 
     @app.context_processor
     def inject_globals():
@@ -306,30 +397,55 @@ def create_app():
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
+        next_from_query = _safe_next_path(request.args.get("next"))
         if request.method == "POST":
             email = normalize_email(request.form.get("email") or "")
             password = normalize_password_input(request.form.get("password") or "")
+            next_after_login = _safe_next_path(request.form.get("next")) or next_from_query
 
             if not email or not password:
                 flash("E-posta ve şifre zorunludur.", "danger")
-                return render_template("auth/login.html", title="Giriş Yap", form_data=request.form)
+                return render_template(
+                    "auth/login.html",
+                    title="Giriş Yap",
+                    form_data=request.form,
+                    next_url=next_after_login,
+                )
 
             user = User.query.filter_by(email=email).first()
             if not user:
                 flash("E-posta veya şifre hatalı.", "danger")
-                return render_template("auth/login.html", title="Giriş Yap", form_data=request.form)
+                return render_template(
+                    "auth/login.html",
+                    title="Giriş Yap",
+                    form_data=request.form,
+                    next_url=next_after_login,
+                )
             if not user.check_password(password):
                 flash("E-posta veya şifre hatalı.", "danger")
-                return render_template("auth/login.html", title="Giriş Yap", form_data=request.form)
+                return render_template(
+                    "auth/login.html",
+                    title="Giriş Yap",
+                    form_data=request.form,
+                    next_url=next_after_login,
+                )
 
             login_user(user)
+
+            if next_after_login:
+                return redirect(next_after_login)
 
             firm = Firm.query.filter_by(user_id=user.id).first()
             if firm:
                 return redirect(url_for("firm_detail"))
             return redirect(url_for("firm_create"))
 
-        return render_template("auth/login.html", title="Giriş Yap", form_data={})
+        return render_template(
+            "auth/login.html",
+            title="Giriş Yap",
+            form_data={},
+            next_url=next_from_query,
+        )
 
     @app.route("/logout", methods=["POST", "GET"])
     @login_required
@@ -544,16 +660,23 @@ def create_app():
             abort(404)
 
         if request.method == "POST":
-            company_name = (request.form.get("company_name") or "").strip()
+            if not current_user.is_authenticated:
+                flash("Talep göndermek için giriş yapmalısınız.", "warning")
+                return redirect(url_for("login", next=request.path))
+
+            requester_firm = Firm.query.filter_by(user_id=current_user.id).first()
+            if not requester_firm:
+                flash("Talep göndermeden önce firma bilgilerinizi oluşturmalısınız.", "warning")
+                return redirect(url_for("firm_create"))
+
             company_city = (request.form.get("company_city") or "").strip()
             message = (request.form.get("message") or "").strip()
+            message_norm = " ".join(message.split())
 
             errors: list[str] = []
-            if not company_name:
-                errors.append("Firma adı zorunludur.")
             if not company_city:
                 errors.append("Firma şehri zorunludur.")
-            if not message:
+            if not message_norm:
                 errors.append("Mesaj alanı zorunludur.")
 
             if errors:
@@ -561,11 +684,27 @@ def create_app():
                     flash(err, "danger")
             else:
                 try:
+                    recent = datetime.utcnow() - timedelta(seconds=90)
+                    dup = (
+                        ListingRequest.query.filter_by(
+                            listing_id=listing.id,
+                            user_id=current_user.id,
+                            message=message_norm,
+                        )
+                        .filter(ListingRequest.created_at >= recent)
+                        .first()
+                    )
+                    if dup:
+                        flash("Bu talep az önce kaydedildi.", "info")
+                        return redirect(url_for("listing_detail", listing_id=listing.id))
+
                     new_request = ListingRequest(
                         listing_id=listing.id,
-                        company_name=company_name,
+                        user_id=current_user.id,
+                        company_name=requester_firm.name,
+                        company_email=(current_user.email or "").strip() or None,
                         company_city=company_city,
-                        message=message,
+                        message=message_norm,
                         created_at=datetime.utcnow(),
                     )
                     db.session.add(new_request)
@@ -578,6 +717,7 @@ def create_app():
 
         requests_for_listing = (
             ListingRequest.query.filter_by(listing_id=listing.id)
+            .options(joinedload(ListingRequest.requester).joinedload(User.firm))
             .order_by(ListingRequest.created_at.desc())
             .all()
         )
@@ -594,6 +734,10 @@ def create_app():
             "confidence": analysis.get("confidence", 0),
         }
 
+        requester_firm = None
+        if current_user.is_authenticated:
+            requester_firm = Firm.query.filter_by(user_id=current_user.id).first()
+
         return render_template(
             "listings/detail.html",
             title=f"İlan Detayı - {listing.title}",
@@ -602,6 +746,7 @@ def create_app():
             analysis_suggestion=analysis_suggestion,
             analysis_tags=analysis.get("tags") or [],
             similar_listings=similar_listings,
+            requester_firm=requester_firm,
         )
 
     return app

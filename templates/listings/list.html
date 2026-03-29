@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% set back_url = url_for('index') %}
+{% set back_label = '← Ana Sayfa' %}
+{% include 'partials/back_nav.html' %}
+
 <div class="row mb-3">
   <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-2">
     <h2 class="section-title mb-0">Tüm İlanlar</h2>
@@ -12,15 +16,11 @@
 
 <div class="row mb-4">
   <div class="col-12">
-    <form method="get" class="filter-area p-3 rounded bg-white shadow-sm">
+    <form method="get" class="filter-area p-3 rounded">
       <div class="row g-3 align-items-end">
         <div class="col-md-4">
           <label for="kategori" class="form-label">Kategori</label>
-          <select
-            id="kategori"
-            name="kategori"
-            class="form-select"
-          >
+          <select id="kategori" name="kategori" class="form-select">
             <option value="">Tümü</option>
             {% for cat in CATEGORIES %}
               <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>
@@ -59,26 +59,22 @@
   {% if listings %}
     {% for listing in listings %}
       <div class="col-md-6 col-lg-4">
-        <div class="card listing-card shadow-sm h-100">
+        <div class="card listing-card h-100">
           <div class="card-body d-flex flex-column">
-            <h5 class="card-title mb-1">{{ listing.title }}</h5>
-            <p class="card-subtitle text-muted small mb-2">
+            <h5 class="card-title">{{ listing.title }}</h5>
+            <p class="card-subtitle mb-2">
               {{ listing.firm.name if listing.firm else '—' }} • {{ listing.city }}
             </p>
 
-            <div class="mb-2">
-              <span class="badge bg-secondary">{{ listing.category }}</span>
-              <span class="badge bg-light text-dark border ms-1">
-                {{ listing.status }}
-              </span>
+            <div class="mb-2 d-flex flex-wrap gap-1">
+              <span class="badge-category">{{ listing.category }}</span>
+              <span class="badge-status">{{ listing.status }}</span>
             </div>
 
             {% if listing.tags_list and listing.tags_list|length > 0 %}
               <div class="mb-2">
                 {% for tag in listing.tags_list[:3] %}
-                  <span class="badge bg-light text-dark border me-1">
-                    {{ tag }}
-                  </span>
+                  <span class="badge bg-light text-dark border me-1">{{ tag }}</span>
                 {% endfor %}
               </div>
             {% endif %}
@@ -87,12 +83,12 @@
               {{ listing.description[:100] }}{% if listing.description|length > 100 %}...{% endif %}
             </p>
 
-            <p class="text-muted small mb-2">
-              Miktar: {{ listing.quantity }}<br>
-              Oluşturulma: {{ listing.created_at.strftime('%d.%m.%Y %H:%M') }}
+            <p class="meta-line mb-3">
+              Miktar: {{ listing.quantity }} &nbsp;·&nbsp;
+              {{ listing.created_at.strftime('%d.%m.%Y') }}
             </p>
 
-            <a href="{{ url_for('listing_detail', listing_id=listing.id) }}" class="btn btn-sm btn-outline-primary mt-auto">
+            <a href="{{ url_for('listing_detail', listing_id=listing.id) }}" class="btn btn-sm btn-outline-primary mt-auto align-self-start">
               Detaya Git
             </a>
           </div>
@@ -108,4 +104,3 @@
   {% endif %}
 </div>
 {% endblock %}
-

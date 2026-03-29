@@ -21,6 +21,11 @@ class User(UserMixin, db.Model):
 
     # Tek kullanıcı = tek firma (MVP kuralı)
     firm = db.relationship("Firm", backref="user", uselist=False, lazy=True)
+    listing_requests = db.relationship(
+        "ListingRequest",
+        back_populates="requester",
+        lazy=True,
+    )
 
     def set_password(self, password: str) -> None:
         # scrypt: Werkzeug 3 varsayılanı; pbkdf2 ile üretilmiş eski kayıtlar da check_password_hash ile doğrulanır
@@ -145,10 +150,37 @@ class ListingRequest(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     listing_id = db.Column(db.Integer, db.ForeignKey("listings.id"), nullable=False)
+    # Talep sahibi hesap; e-posta ve firma adı gösterimi bu ilişki üzerinden doğrulanır.
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
     company_name = db.Column(db.String(200), nullable=False)
+    company_email = db.Column(db.String(200), nullable=True)
     company_city = db.Column(db.String(100), nullable=False)
     message = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    requester = db.relationship(
+        "User",
+        back_populates="listing_requests",
+        foreign_keys=[user_id],
+    )
+
+    @property
+    def display_company_name(self) -> str:
+        """Talebi oluşturan hesabın firması; user_id yoksa eski company_name."""
+        u = self.requester
+        if u is not None:
+            f = getattr(u, "firm", None)
+            if f is not None and getattr(f, "name", None):
+                return str(f.name).strip()
+        return (self.company_name or "").strip() or "—"
+
+    @property
+    def display_email(self) -> str:
+        """Talebi oluşturan hesabın e-postası; oturumdaki kullanıcıya göre değişmez."""
+        u = self.requester
+        if u is not None and getattr(u, "email", None):
+            return str(u.email).strip()
+        return (self.company_email or "").strip()
 
     def __repr__(self) -> str:
         return f"<Request {self.company_name} - Listing {self.listing_id}>"

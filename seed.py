@@ -2,7 +2,7 @@ import os
 import json
 from datetime import datetime, timedelta
 
-from app import create_app
+from app import create_app, dedupe_listing_request_bursts
 from models import Firm, Listing, ListingRequest, User, db
 from services.listing_analyzer import analyze_listing_text
 from utils.auth_helpers import normalize_email
@@ -79,6 +79,61 @@ def seed_data():
                     "phone": "0312 000 00 00",
                 },
             },
+            {
+                "email": "dogageri@demo.com",
+                "full_name": "Doğa Geri Kazanım Temsilcisi",
+                "firm": {
+                    "name": "Doğa Geri Kazanım Ltd.",
+                    "sector": "Geri Dönüşüm",
+                    "city": "İstanbul",
+                    "description": "Plastik ve granül atıklarının düzenli tedariki.",
+                    "phone": "0212 100 20 30",
+                },
+            },
+            {
+                "email": "ankametal@demo.com",
+                "full_name": "Anka Metal Temsilcisi",
+                "firm": {
+                    "name": "Anka Metal Geri Dönüşüm",
+                    "sector": "Metal Geri Dönüşüm",
+                    "city": "Kocaeli",
+                    "description": "Çelik ve sac artıklarının yerinde değerlendirilmesi.",
+                    "phone": "0262 200 30 40",
+                },
+            },
+            {
+                "email": "ekokagit@demo.com",
+                "full_name": "Eko Kağıt Temsilcisi",
+                "firm": {
+                    "name": "Eko Kağıt Sanayi",
+                    "sector": "Kağıt",
+                    "city": "Ankara",
+                    "description": "Karton ve kağıt atığı tedariki.",
+                    "phone": "0312 300 40 50",
+                },
+            },
+            {
+                "email": "tekno@demo.com",
+                "full_name": "Tekno Geri Dönüşüm Temsilcisi",
+                "firm": {
+                    "name": "Tekno Geri Dönüşüm",
+                    "sector": "Elektronik Atık",
+                    "city": "İzmir",
+                    "description": "Elektronik kart ve metal geri kazanımı.",
+                    "phone": "0232 400 50 60",
+                },
+            },
+            {
+                "email": "pet@demo.com",
+                "full_name": "PET Dönüşüm Demo",
+                "firm": {
+                    "name": "PET Dönüşüm Merkezi",
+                    "sector": "Geri Dönüşüm",
+                    "city": "İstanbul",
+                    "description": "PET plastik atıklarının toplanması ve değerlendirilmesi.",
+                    "phone": "0212 000 00 01",
+                },
+            },
         ]
 
         user_by_email = {}
@@ -133,6 +188,15 @@ def seed_data():
                 "quantity": "5 ton",
                 "price": None,
                 "created_at": datetime.utcnow() - timedelta(days=6),
+            },
+            {
+                "firm_email": "ege@demo.com",
+                "title": "Elektronik Kart Atıkları",
+                "description": "Üretim hattından çıkan bozuk ve kullanılmayan elektronik kart ve PCB atıkları.",
+                "category": "Metal",
+                "quantity": "800 kg",
+                "price": None,
+                "created_at": datetime.utcnow() - timedelta(days=7),
             },
             {
                 "firm_email": "yesil@demo.com",
@@ -207,41 +271,106 @@ def seed_data():
                 updated_tags += 1
         db.session.commit()
 
-        # Demo talepler (isteğe bağlı; tekrar çalıştırıldığında duplicate olmasın)
-        pet_listing = Listing.query.filter_by(
-            title="Şeffaf PET Şişe Atıkları",
-            firm_id=firm_by_email["anadolu@demo.com"].id,
-        ).first()
-        if pet_listing:
-            demo_requests = [
-                {
-                    "listing_id": pet_listing.id,
-                    "company_name": "PET Dönüşüm Merkezi",
-                    "company_city": "İstanbul",
-                    "message": "Şeffaf PET atıklarınız için kg başı fiyat teklifi sunmak isteriz.",
-                    "created_at": datetime.utcnow() - timedelta(days=1, hours=3),
-                },
-            ]
+        # Demo talepler (user_id + firma; tekrar çalıştırıldığında aynı kayıt iki kez eklenmez)
+        def _find_listing(seller_email: str, title: str):
+            fe = normalize_email(seller_email)
+            firm = firm_by_email.get(fe)
+            if not firm:
+                return None
+            return Listing.query.filter_by(firm_id=firm.id, title=title).first()
 
-            for dr in demo_requests:
-                exists = ListingRequest.query.filter_by(
-                    listing_id=dr["listing_id"],
-                    company_name=dr["company_name"],
-                    message=dr["message"],
-                ).first()
-                if exists:
-                    continue
+        demo_request_specs: list[tuple[str, str, str, str, str, datetime]] = [
+            (
+                "anadolu@demo.com",
+                "Renkli Plastik Granül Atığı",
+                "dogageri@demo.com",
+                "İstanbul",
+                "Plastik granülleri düzenli olarak alabiliriz. Aylık minimum 2 ton talebimiz var.",
+                datetime(2026, 3, 16, 11, 22),
+            ),
+            (
+                "ege@demo.com",
+                "Çelik Sac Kesim Artıkları",
+                "ankametal@demo.com",
+                "Kocaeli",
+                "Çelik sac artıklarını yerinde görüp teklif vermek isteriz.",
+                datetime(2026, 3, 17, 6, 22),
+            ),
+            (
+                "pakambalaj@demo.com",
+                "Hasarlı Karton Kutular",
+                "ekokagit@demo.com",
+                "Ankara",
+                "Düzenli karton ve kağıt atığı tedariki arıyoruz. Uzun vadeli iş birliği için iletişime geçebilir miyiz?",
+                datetime(2026, 3, 17, 11, 22),
+            ),
+            (
+                "anadolu@demo.com",
+                "Şeffaf PET Şişe Atıkları",
+                "pet@demo.com",
+                "İstanbul",
+                "Şeffaf PET atıklarınız için kg başı fiyat teklifi sunmak isteriz",
+                datetime(2026, 3, 18, 8, 22),
+            ),
+            (
+                "ege@demo.com",
+                "Elektronik Kart Atıkları",
+                "tekno@demo.com",
+                "İzmir",
+                "Elektronik kart atıklarını parçalayarak metal geri kazanımı yapıyoruz. Yerinde inceleme talep ediyoruz.",
+                datetime(2026, 3, 19, 1, 22),
+            ),
+            (
+                "anadolu@demo.com",
+                "Şeffaf PET Şişe Atıkları",
+                "pet@demo.com",
+                "İstanbul",
+                "Şeffaf PET atıklarınız için kg başı fiyat teklifi sunmak isteriz.",
+                datetime(2026, 3, 25, 10, 8),
+            ),
+        ]
 
-                req = ListingRequest(
-                    listing_id=dr["listing_id"],
-                    company_name=dr["company_name"],
-                    company_city=dr["company_city"],
-                    message=dr["message"],
-                    created_at=dr["created_at"],
+        for seller_em, title, buyer_em, city, msg, created in demo_request_specs:
+            listing = _find_listing(seller_em, title)
+            bu = user_by_email.get(normalize_email(buyer_em))
+            bf = firm_by_email.get(normalize_email(buyer_em))
+            if not listing or not bu or not bf:
+                continue
+            msg_norm = " ".join(msg.split())
+            exists = ListingRequest.query.filter_by(
+                listing_id=listing.id,
+                user_id=bu.id,
+                message=msg_norm,
+            ).first()
+            if exists:
+                if exists.company_email != normalize_email(buyer_em) or exists.user_id != bu.id:
+                    exists.company_email = normalize_email(buyer_em)
+                    exists.user_id = bu.id
+                    exists.company_name = bf.name
+                continue
+
+            db.session.add(
+                ListingRequest(
+                    listing_id=listing.id,
+                    user_id=bu.id,
+                    company_name=bf.name,
+                    company_email=normalize_email(buyer_em),
+                    company_city=city,
+                    message=msg_norm,
+                    created_at=created,
                 )
-                db.session.add(req)
+            )
+        db.session.commit()
 
-            db.session.commit()
+        # Eski satırlar: company_email ile user_id eşitle (PET vb.)
+        for lr in ListingRequest.query.filter(ListingRequest.user_id.is_(None)).all():
+            if lr.company_email:
+                u = User.query.filter_by(email=normalize_email(lr.company_email)).first()
+                if u:
+                    lr.user_id = u.id
+        db.session.commit()
+
+        dedupe_listing_request_bursts()
 
         print(f"Seed tamamlandı. Etiket güncellemeleri: {updated_tags}")
 

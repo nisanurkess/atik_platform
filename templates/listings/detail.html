@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% set back_url = url_for('listings') %}
+{% set back_label = '← İlanlara dön' %}
+{% include 'partials/back_nav.html' %}
+
 <div class="row">
   <div class="col-lg-8">
     <div class="card shadow-sm mb-4">
@@ -11,19 +15,19 @@
           {{ listing.created_at.strftime('%d.%m.%Y %H:%M') }}
         </p>
 
-        <div class="mb-3">
-          <span class="badge bg-secondary me-1">{{ listing.category }}</span>
-          <span class="badge bg-light text-dark border me-1">
+        <div class="mb-3 d-flex flex-wrap gap-1 align-items-center">
+          <span class="badge-category">{{ listing.category }}</span>
+          <span class="badge-status me-1">
             Miktar: {{ listing.quantity }}
           </span>
 
           {% if listing.price is not none %}
-            <span class="badge bg-success me-1">
+            <span class="badge rounded-pill text-bg-light border me-1" style="border-color: var(--atik-border) !important; color: var(--atik-text);">
               Fiyat: {{ listing.price }}
             </span>
           {% endif %}
 
-          <span class="badge bg-{{ 'success' if listing.status == 'Aktif' else 'secondary' }}">
+          <span class="badge rounded-pill {% if listing.status == 'Aktif' %}text-bg-success{% else %}text-bg-secondary{% endif %}">
             {{ listing.status }}
           </span>
         </div>
@@ -74,13 +78,22 @@
           <div class="list-group">
             {% for req in requests_for_listing %}
               <div class="list-group-item list-group-item-action flex-column align-items-start">
-                <div class="d-flex w-100 justify-content-between">
-                  <h6 class="mb-1">{{ req.company_name }} ({{ req.company_city }})</h6>
-                  <small class="text-muted">
+                <div class="d-flex w-100 justify-content-between align-items-start gap-2">
+                  <div class="flex-grow-1 min-w-0">
+                    <h6 class="mb-1">{{ req.display_company_name }} ({{ req.company_city }})</h6>
+                    <div class="small text-muted mb-1">
+                      {% if req.display_email %}
+                        <a href="mailto:{{ req.display_email }}" class="text-decoration-none">{{ req.display_email }}</a>
+                      {% else %}
+                        —
+                      {% endif %}
+                    </div>
+                  </div>
+                  <small class="text-muted text-nowrap flex-shrink-0">
                     {{ req.created_at.strftime('%d.%m.%Y %H:%M') }}
                   </small>
                 </div>
-                <p class="mb-1">{{ req.message }}</p>
+                <p class="mb-0">{{ req.message }}</p>
               </div>
             {% endfor %}
           </div>
@@ -138,48 +151,55 @@
     <div class="card shadow-sm">
       <div class="card-body">
         <h4 class="section-title mb-3">Bu İlan İçin Talep Gönder</h4>
-        <p class="text-muted small">
-          Kendi firmanız adına bu ilan için mesaj bırakabilirsiniz.
-        </p>
+        {% if current_user.is_authenticated %}
+          {% if requester_firm %}
+            <p class="text-muted small mb-2">
+              Talep, profilinizdeki firma adı (<strong>{{ requester_firm.name }}</strong>) ve hesap e-postanız ile kaydedilir.
+            </p>
+            <form
+              method="post"
+              class="request-form"
+              onsubmit="this.querySelector('button[type=submit]').disabled=true"
+            >
+              <div class="mb-3">
+                <label for="company_city" class="form-label">Firma Şehri</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="company_city"
+                  name="company_city"
+                  value="{{ requester_firm.city }}"
+                  required
+                />
+              </div>
 
-        <form method="post" class="request-form">
-          <div class="mb-3">
-            <label for="company_name" class="form-label">Firma Adı</label>
-            <input
-              type="text"
-              class="form-control"
-              id="company_name"
-              name="company_name"
-              required
-            />
-          </div>
+              <div class="mb-3">
+                <label for="message" class="form-label">Mesaj</label>
+                <textarea
+                  class="form-control"
+                  id="message"
+                  name="message"
+                  rows="4"
+                  required
+                ></textarea>
+              </div>
 
-          <div class="mb-3">
-            <label for="company_city" class="form-label">Firma Şehri</label>
-            <input
-              type="text"
-              class="form-control"
-              id="company_city"
-              name="company_city"
-              required
-            />
-          </div>
-
-          <div class="mb-3">
-            <label for="message" class="form-label">Mesaj</label>
-            <textarea
-              class="form-control"
-              id="message"
-              name="message"
-              rows="4"
-              required
-            ></textarea>
-          </div>
-
-          <button type="submit" class="btn btn-primary w-100">
-            Talep Gönder
-          </button>
-        </form>
+              <button type="submit" class="btn btn-primary w-100">
+                Talep Gönder
+              </button>
+            </form>
+          {% else %}
+            <p class="text-muted small mb-2">
+              Talep göndermek için önce firma profilinizi oluşturmalısınız.
+            </p>
+            <a href="{{ url_for('firm_create') }}" class="btn btn-outline-primary w-100">Firma Oluştur</a>
+          {% endif %}
+        {% else %}
+          <p class="text-muted small mb-3">
+            Talep göndermek için giriş yapın. Firma adı ve e-posta, hesabınızdaki bilgilerden otomatik alınır.
+          </p>
+          <a href="{{ url_for('login', next=request.path) }}" class="btn btn-primary w-100">Giriş Yap</a>
+        {% endif %}
       </div>
     </div>
   </div>

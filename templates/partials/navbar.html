@@ -20,8 +20,8 @@
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
+          width="15"
+          height="15"
           fill="currentColor"
           viewBox="0 0 16 16"
           aria-hidden="true"
@@ -30,6 +30,7 @@
         </svg>
       </a>
     </div>
+
     <a
       class="navbar-brand fw-bold mb-0 text-truncate"
       href="{{ url_for('index') }}"
@@ -39,7 +40,7 @@
     </a>
 
     <div class="collapse navbar-collapse" id="mainNavbar">
-      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-1">
         <li class="nav-item">
           <a
             class="nav-link {% if request.endpoint == 'index' %}active{% endif %}"
@@ -84,16 +85,10 @@
             </button>
           </form>
         {% else %}
-          <a
-            class="btn btn-outline-secondary btn-sm"
-            href="{{ url_for('login') }}"
-          >
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('login') }}">
             Giriş Yap
           </a>
-          <a
-            class="btn btn-primary btn-sm"
-            href="{{ url_for('register') }}"
-          >
+          <a class="btn btn-primary btn-sm" href="{{ url_for('register') }}">
             Kayıt Ol
           </a>
         {% endif %}
@@ -101,4 +96,3 @@
     </div>
   </div>
 </nav>
-

@@ -1,150 +1,443 @@
-/* --- Mint / sürdürülebilirlik teması (Bootstrap üzerine) --- */
+/* ============================================================
+   Atık Değişim Platformu — Rafine Mint Teması
+   Bootstrap üzerine minimal, kurumsal iyileştirme
+   ============================================================ */
+
 :root {
-  --atik-mint: #3eb489;
-  --atik-mint-dark: #2d9a76;
-  --atik-mint-soft: #e8f7f1;
-  --atik-mint-muted: #c5eadb;
-  --atik-forest: #1e4d3d;
-  --bs-primary: #2d9a76;
-  --bs-primary-rgb: 45, 154, 118;
-  --bs-link-color: #248a68;
-  --bs-link-hover-color: #1d6f54;
+  /* Ana palet */
+  --ap-green:        #2F9E78;
+  --ap-green-hover:  #27896A;
+  --ap-green-soft:   #D7EEE5;
+  --ap-green-border: #DDE9E3;
+  --ap-bg-light:     #F4FAF7;
+  --ap-bg-page:      #EDF5F1;
+  --ap-white:        #FFFFFF;
+  --ap-text:         #1F2D2A;
+  --ap-text-muted:   #5F6F6B;
+
+  /* Bootstrap override */
+  --bs-primary:          #2F9E78;
+  --bs-primary-rgb:      47, 158, 120;
+  --bs-link-color:       #2F9E78;
+  --bs-link-hover-color: #27896A;
+
+  /* Ortak radius & shadow sistemi */
+  --ap-radius-sm: 0.5rem;
+  --ap-radius:    0.75rem;
+  --ap-radius-lg: 1rem;
+  --ap-shadow-sm: 0 1px 4px rgba(31, 45, 42, 0.06), 0 2px 10px rgba(31, 45, 42, 0.04);
+  --ap-shadow:    0 2px 12px rgba(31, 45, 42, 0.08), 0 4px 24px rgba(31, 45, 42, 0.04);
+  --ap-shadow-lg: 0 8px 32px rgba(31, 45, 42, 0.10), 0 2px 8px rgba(31, 45, 42, 0.05);
+  --ap-transition: 0.18s ease;
 }
 
+/* ── Sayfa zemini ── */
 body.theme-atik {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: linear-gradient(165deg, #f5fcfa 0%, #e9f7f1 38%, #f0faf7 100%);
-  color: #1a2e28;
+  font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: var(--ap-bg-page);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(47,158,120,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(47,158,120,0.05) 0%, transparent 60%);
+  color: var(--ap-text);
   min-height: 100vh;
 }
 
-/* Ana içerik hafif “kart” hissi */
 body.theme-atik main.container {
   max-width: 1140px;
 }
 
+/* ── Genel link ── */
+body.theme-atik a {
+  color: var(--ap-green);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color var(--ap-transition);
+}
+body.theme-atik a:hover {
+  color: var(--ap-green-hover);
+}
+
+/* ============================================================
+   NAVBAR
+   ============================================================ */
 .atik-navbar {
-  background: rgba(255, 255, 255, 0.92) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(45, 154, 118, 0.14);
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--ap-green-border);
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
 }
 
 .atik-navbar .navbar-brand {
-  color: var(--atik-forest) !important;
+  color: var(--ap-text) !important;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  transition: color var(--ap-transition);
+}
+.atik-navbar .navbar-brand:hover {
+  color: var(--ap-green) !important;
 }
 
+.atik-navbar .nav-link {
+  color: var(--ap-text-muted) !important;
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.75rem !important;
+  border-radius: var(--ap-radius-sm);
+  transition: color var(--ap-transition), background var(--ap-transition);
+}
 .atik-navbar .nav-link:hover {
-  color: var(--atik-mint-dark) !important;
+  color: var(--ap-green) !important;
+  background: var(--ap-green-soft);
+}
+.atik-navbar .nav-link.active {
+  color: var(--ap-green) !important;
+  font-weight: 600;
+  background: var(--ap-green-soft);
 }
 
-.shadow-atik {
-  box-shadow: 0 8px 32px rgba(15, 90, 70, 0.08), 0 2px 8px rgba(15, 90, 70, 0.04) !important;
+.navbar-home-btn.nav-icon-btn {
+  border-color: var(--ap-green-border);
+  color: var(--ap-text-muted);
+  transition: border-color var(--ap-transition), color var(--ap-transition), background var(--ap-transition);
+}
+.navbar-home-btn.nav-icon-btn:hover {
+  border-color: var(--ap-green);
+  color: var(--ap-green);
+  background: var(--ap-green-soft);
 }
 
-.auth-card {
-  border: 1px solid rgba(45, 154, 118, 0.12);
-  border-radius: 1rem;
-  overflow: hidden;
+/* Navbar auth butonları */
+.atik-navbar .btn-outline-secondary {
+  border-color: var(--ap-green-border);
+  color: var(--ap-text-muted);
+  font-weight: 500;
+  font-size: 0.85rem;
+  border-radius: var(--ap-radius-sm);
+  transition: border-color var(--ap-transition), color var(--ap-transition), background var(--ap-transition);
+}
+.atik-navbar .btn-outline-secondary:hover {
+  border-color: var(--ap-green);
+  color: var(--ap-green);
+  background: var(--ap-green-soft);
 }
 
-.auth-card .card-body {
-  padding: 2rem 1.75rem;
-}
-
+/* ============================================================
+   BUTONLAR
+   ============================================================ */
 body.theme-atik .btn-primary {
-  background-color: var(--atik-mint-dark);
-  border-color: var(--atik-mint-dark);
+  background-color: var(--ap-green);
+  border-color: var(--ap-green);
+  color: #fff;
   font-weight: 600;
   letter-spacing: 0.01em;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border-radius: var(--ap-radius-sm);
+  transition: background var(--ap-transition), border-color var(--ap-transition),
+              transform var(--ap-transition), box-shadow var(--ap-transition);
 }
-
-body.theme-atik .btn-primary:hover {
-  background-color: #258066;
-  border-color: #258066;
+body.theme-atik .btn-primary:hover,
+body.theme-atik .btn-primary:focus {
+  background-color: var(--ap-green-hover);
+  border-color: var(--ap-green-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(45, 154, 118, 0.35);
+  box-shadow: 0 4px 14px rgba(47, 158, 120, 0.30);
 }
 
 body.theme-atik .btn-outline-primary {
-  color: var(--atik-mint-dark);
-  border-color: var(--atik-mint-muted);
+  color: var(--ap-green);
+  border-color: var(--ap-green-border);
+  font-weight: 500;
+  border-radius: var(--ap-radius-sm);
+  transition: background var(--ap-transition), border-color var(--ap-transition),
+              color var(--ap-transition), transform var(--ap-transition);
+}
+body.theme-atik .btn-outline-primary:hover,
+body.theme-atik .btn-outline-primary:focus {
+  background-color: var(--ap-green-soft);
+  color: var(--ap-green-hover);
+  border-color: var(--ap-green);
+  transform: translateY(-1px);
 }
 
-body.theme-atik .btn-outline-primary:hover {
-  background-color: var(--atik-mint-soft);
-  color: var(--atik-forest);
-  border-color: var(--atik-mint-dark);
+body.theme-atik .btn-outline-secondary {
+  border-color: var(--ap-green-border);
+  color: var(--ap-text-muted);
+  border-radius: var(--ap-radius-sm);
+  transition: background var(--ap-transition), border-color var(--ap-transition), color var(--ap-transition);
+}
+body.theme-atik .btn-outline-secondary:hover {
+  background: var(--ap-bg-light);
+  border-color: #c5d4ce;
+  color: var(--ap-text);
 }
 
+/* ============================================================
+   KARTLAR — genel
+   ============================================================ */
+body.theme-atik .card {
+  background: var(--ap-white);
+  border: 1px solid var(--ap-green-border);
+  border-radius: var(--ap-radius);
+  box-shadow: var(--ap-shadow-sm);
+}
+
+.shadow-atik {
+  box-shadow: var(--ap-shadow) !important;
+}
+
+/* ============================================================
+   FORM ELEMANları
+   ============================================================ */
 body.theme-atik .form-control,
 body.theme-atik .form-select {
-  border-radius: 0.55rem;
-  border-color: rgba(45, 154, 118, 0.2);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  border-radius: var(--ap-radius-sm);
+  border-color: var(--ap-green-border);
+  background: var(--ap-white);
+  color: var(--ap-text);
+  font-size: 0.9rem;
+  transition: border-color var(--ap-transition), box-shadow var(--ap-transition);
 }
-
 body.theme-atik .form-control:focus,
 body.theme-atik .form-select:focus {
-  border-color: var(--atik-mint);
-  box-shadow: 0 0 0 0.2rem rgba(45, 154, 118, 0.2);
+  border-color: var(--ap-green);
+  box-shadow: 0 0 0 0.2rem rgba(47, 158, 120, 0.18);
+  background: var(--ap-white);
 }
-
-body.theme-atik .card {
-  border-radius: 0.9rem;
-  border-color: rgba(45, 154, 118, 0.1);
-}
-
-body.theme-atik .alert-info {
-  background-color: var(--atik-mint-soft);
-  border-color: rgba(45, 154, 118, 0.15);
-  color: var(--atik-forest);
-}
-
-body.theme-atik a {
+body.theme-atik .form-label {
   font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--ap-text);
+  margin-bottom: 0.35rem;
 }
 
-.page-title {
-  font-weight: 700;
+/* ============================================================
+   ALERT
+   ============================================================ */
+body.theme-atik .alert-info {
+  background-color: var(--ap-green-soft);
+  border-color: var(--ap-green-border);
+  color: var(--ap-text);
 }
 
-.section-title {
-  font-size: 1.4rem;
-  font-weight: 600;
+/* ============================================================
+   AUTH KARTLARI (login / register)
+   ============================================================ */
+.auth-card {
+  border: 1px solid var(--ap-green-border);
+  border-radius: var(--ap-radius-lg);
+  box-shadow: var(--ap-shadow);
+  overflow: hidden;
+}
+.auth-card .card-body {
+  padding: 2.25rem 2rem;
 }
 
+/* ============================================================
+   HERO ALANI
+   ============================================================ */
+.hero-section {
+  background: linear-gradient(135deg, #F4FAF7 0%, #EAF5EF 50%, #F0FAF5 100%);
+  border-radius: var(--ap-radius-lg);
+  padding: 3.5rem 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--ap-green-border);
+}
+
+.hero-section .hero-title {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 800;
+  color: var(--ap-text);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+.hero-section .hero-desc {
+  font-size: 1.05rem;
+  color: var(--ap-text-muted);
+  max-width: 48ch;
+  line-height: 1.65;
+  margin-bottom: 1.75rem;
+}
+
+.hero-section .btn-primary {
+  padding: 0.65rem 1.5rem;
+  font-size: 0.95rem;
+  border-radius: var(--ap-radius-sm);
+}
+
+.hero-section .btn-outline-secondary {
+  padding: 0.65rem 1.4rem;
+  font-size: 0.95rem;
+  border-radius: var(--ap-radius-sm);
+}
+
+/* ============================================================
+   İSTATİSTİK KARTLARI
+   ============================================================ */
 .summary-card {
-  border: none;
-  border-radius: 0.75rem;
+  border: 1px solid var(--ap-green-border) !important;
+  border-radius: var(--ap-radius) !important;
+  background: var(--ap-white) !important;
+  box-shadow: var(--ap-shadow-sm) !important;
+  transition: transform var(--ap-transition), box-shadow var(--ap-transition);
+  padding: 1.25rem 1.5rem !important;
+}
+.summary-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--ap-shadow) !important;
+}
+
+.summary-card .summary-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ap-text-muted);
+  margin-bottom: 0.35rem;
 }
 
 .summary-number {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 2.10rem;
+  font-weight: 500;
+  color: var(--ap-green);
+  line-height: 1;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.03em;
 }
 
+.summary-card .summary-desc {
+  font-size: 0.82rem;
+  color: var(--ap-text-muted);
+}
+
+/* ============================================================
+   SON İLAN KARTLARI
+   ============================================================ */
 .listing-card {
-  border: none;
-  border-radius: 0.75rem;
+  border: 1px solid var(--ap-green-border) !important;
+  border-radius: var(--ap-radius) !important;
+  background: var(--ap-white) !important;
+  box-shadow: var(--ap-shadow-sm) !important;
+  transition: transform var(--ap-transition), box-shadow var(--ap-transition);
+}
+.listing-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--ap-shadow) !important;
 }
 
 .listing-card .card-body {
-  padding: 1.1rem 1.1rem 1rem;
+  padding: 1.25rem 1.25rem 1.1rem;
 }
 
+.listing-card .card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ap-text);
+  margin-bottom: 0.25rem;
+  line-height: 1.35;
+}
+
+.listing-card .card-subtitle {
+  font-size: 0.8rem;
+  color: var(--ap-text-muted);
+  margin-bottom: 0.6rem;
+}
+
+.listing-card .card-text {
+  font-size: 0.85rem;
+  color: var(--ap-text-muted);
+  line-height: 1.55;
+}
+
+.listing-card .badge.bg-secondary {
+  background-color: var(--ap-green-soft) !important;
+  color: var(--ap-green-hover) !important;
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  border-radius: 4px;
+  padding: 0.3em 0.6em;
+  border: 1px solid var(--ap-green-border);
+}
+
+.listing-card .badge.bg-light {
+  background-color: var(--ap-bg-light) !important;
+  color: var(--ap-text-muted) !important;
+  border: 1px solid var(--ap-green-border);
+  font-size: 0.72rem;
+  border-radius: 4px;
+}
+
+.listing-card .btn-outline-primary {
+  font-size: 0.82rem;
+  padding: 0.35rem 0.9rem;
+}
+
+/* Bölüm başlığı + "Tüm İlanları Gör" satırı */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.section-header .view-all-link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ap-green);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: color var(--ap-transition), gap var(--ap-transition);
+}
+.section-header .view-all-link:hover {
+  color: var(--ap-green-hover);
+  gap: 0.45rem;
+}
+
+/* ============================================================
+   FİLTRE ALANI
+   ============================================================ */
 .filter-area {
-  border: 1px solid #e5e5e5;
+  background: var(--ap-white) !important;
+  border: 1px solid var(--ap-green-border) !important;
+  border-radius: var(--ap-radius) !important;
+  box-shadow: var(--ap-shadow-sm) !important;
 }
 
+/* ============================================================
+   LISTING FORM & REQUEST FORM
+   ============================================================ */
 .listing-form .form-label,
 .request-form .form-label {
   font-weight: 500;
 }
 
+/* ============================================================
+   TİPOGRAFİ
+   ============================================================ */
+.page-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--ap-text);
+  letter-spacing: -0.02em;
+}
+
+.section-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--ap-text);
+  letter-spacing: -0.01em;
+}
+
+/* ============================================================
+   NAVBAR — yapısal yardımcılar (değişmedi, korundu)
+   ============================================================ */
 .navbar-brand {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
 }
 
 .navbar .nav-link.active {
@@ -186,7 +479,9 @@ body.theme-atik a {
   z-index: 1030;
 }
 
-/* Mobilde kart ve boşluklar */
+/* ============================================================
+   MOBİL
+   ============================================================ */
 @media (max-width: 576px) {
   .navbar-main-wrap {
     gap: 0.5rem;
@@ -200,7 +495,7 @@ body.theme-atik a {
     order: 2;
     flex: 1 1 auto;
     max-width: calc(100% - 7.5rem);
-    font-size: 1rem;
+    font-size: 0.95rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -210,9 +505,10 @@ body.theme-atik a {
     order: 3;
     width: 100%;
     margin-top: 0.25rem;
-    background: #fff;
-    border-radius: 0.5rem;
+    background: var(--ap-white);
+    border-radius: var(--ap-radius-sm);
     padding: 0.5rem 0.75rem 0.75rem;
+    border: 1px solid var(--ap-green-border);
   }
 
   .navbar-auth-actions {
@@ -224,18 +520,30 @@ body.theme-atik a {
   }
 
   .navbar-nav .nav-link {
-    padding-left: 0;
-    padding-right: 0;
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
   }
 
   .summary-card,
   .listing-card {
-    border-radius: 0.5rem;
+    border-radius: var(--ap-radius-sm) !important;
   }
 
   main.container {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
   }
-}
 
+  .hero-section {
+    padding: 2rem 1.25rem;
+    border-radius: var(--ap-radius);
+  }
+
+  .hero-section .hero-title {
+    font-size: 1.6rem;
+  }
+
+  .auth-card .card-body {
+    padding: 1.5rem 1.25rem;
+  }
+}

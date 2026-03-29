@@ -1,85 +1,82 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row mb-4">
-  <div class="col-12 text-center">
-    <h1 class="page-title">Atık Değişim Platformu</h1>
-    <p class="text-muted">
-      Fabrikalar arası atık değişimi ve geri dönüşüm iş birlikleri için basit bir ilan platformu.
-    </p>
-    <div class="d-flex justify-content-center gap-3 mt-3 flex-wrap">
-      <a href="{{ url_for('create_listing') }}" class="btn btn-primary btn-lg">
-        İlan Aç
-      </a>
-      <a href="{{ url_for('listings') }}" class="btn btn-outline-secondary btn-lg">
-        İlanları İncele
-      </a>
+<div class="hero-section text-center text-md-start mb-4 mb-md-5">
+  <div class="row align-items-center">
+    <div class="col-lg-8">
+      <h1 class="hero-title">
+        Atıkları değere<br>dönüştürün
+      </h1>
+      <p class="hero-desc mb-0">
+        Firmanızın atık ve yan ürünlerini diğer işletmelerle eşleştirin.
+        Sürdürülebilir bir döngüsel ekonomi için doğru platforma hoş geldiniz.
+      </p>
+      <div class="d-flex flex-wrap gap-3 mt-4">
+        <a href="{{ url_for('create_listing') }}" class="btn btn-primary btn-cta-primary">
+          İlan Aç
+        </a>
+        <a href="{{ url_for('listings') }}" class="btn btn-cta-secondary">
+          İlanları İncele
+        </a>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="row g-3 mb-4">
-  <div class="col-md-4">
-    <div class="card summary-card shadow-sm">
-      <div class="card-body">
-        <h5 class="card-title">Toplam İlan</h5>
-        <p class="summary-number">{{ total_listings }}</p>
-        <p class="card-text text-muted small">
-          Sistemdeki toplam ilan sayısı.
-        </p>
-      </div>
+  <div class=".col-sm-">
+    <div class="summary-card">
+      <div class="summary-label">Toplam İlan</div>
+      <div class="summary-number">{{ total_listings }}</div>
+      <div class="summary-desc">Aktif ve pasif tüm ilanlar</div>
+    </div>
+  </div>
+  <div class=".col-sm-">
+    <div class="summary-card">
+      <div class="summary-label">Aktif İlan</div>
+      <div class="summary-number">{{ active_listings }}</div>
+      <div class="summary-desc">Şu an talep alabilir durumda</div>
     </div>
   </div>
   <div class="col-md-4">
-    <div class="card summary-card shadow-sm">
-      <div class="card-body">
-        <h5 class="card-title">Aktif İlan</h5>
-        <p class="summary-number text-success">{{ active_listings }}</p>
-        <p class="card-text text-muted small">
-          Şu anda aktif durumda olan ilanlar.
-        </p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card summary-card shadow-sm">
-      <div class="card-body">
-        <h5 class="card-title">Toplam Firma</h5>
-        <p class="summary-number text-primary">{{ firm_count }}</p>
-        <p class="card-text text-muted small">
-          Platforma kayıtlı firma sayısı.
-        </p>
-      </div>
+    <div class="summary-card">
+      <div class="summary-label">Kayıtlı Firma</div>
+      <div class="summary-number">{{ firm_count }}</div>
+      <div class="summary-desc">Platformdaki toplam firma</div>
     </div>
   </div>
 </div>
 
-<div class="row mb-2">
-  <div class="col-12 d-flex justify-content-between align-items-center">
-    <h2 class="section-title mb-0">Son Eklenen İlanlar</h2>
-    <a href="{{ url_for('listings') }}" class="small">Tüm ilanları gör</a>
-  </div>
+<div class="section-header">
+  <h2 class="section-title mb-0">Son Eklenen İlanlar</h2>
+  <a href="{{ url_for('listings') }}" class="view-all-link">
+    Tüm ilanları gör
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+      <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+    </svg>
+  </a>
 </div>
 
 <div class="row g-3">
   {% if latest_listings %}
     {% for listing in latest_listings %}
       <div class="col-md-6 col-lg-4">
-        <div class="card listing-card shadow-sm h-100">
+        <div class="card listing-card h-100">
           <div class="card-body d-flex flex-column">
-            <h5 class="card-title mb-1">{{ listing.title }}</h5>
-            <p class="card-subtitle text-muted small mb-2">
-              {{ listing.firm.name }} • {{ listing.firm.city }}
+            <h5 class="card-title">{{ listing.title }}</h5>
+            <p class="card-subtitle mb-2">
+              {{ listing.firm.name if listing.firm else '—' }} • {{ listing.firm.city if listing.firm else '—' }}
             </p>
-            <span class="badge bg-secondary mb-2">{{ listing.category }}</span>
+            <div class="mb-2 d-flex flex-wrap gap-1">
+              <span class="badge-category">{{ listing.category }}</span>
+            </div>
             <p class="card-text flex-grow-1">
-              {{ listing.description[:120] }}{% if listing.description|length > 120 %}...{% endif %}
+              {{ listing.description[:100] }}{% if listing.description|length > 100 %}...{% endif %}
             </p>
-            <p class="text-muted small mb-2">
-              Miktar: {{ listing.quantity }}<br>
-              Oluşturulma: {{ listing.created_at.strftime('%d.%m.%Y %H:%M') }}
+            <p class="meta-line mb-3">
+              Miktar: {{ listing.quantity }} &nbsp;·&nbsp; {{ listing.created_at.strftime('%d.%m.%Y') }}
             </p>
-            <a href="{{ url_for('listing_detail', listing_id=listing.id) }}" class="btn btn-sm btn-outline-primary mt-auto">
+            <a href="{{ url_for('listing_detail', listing_id=listing.id) }}" class="btn btn-sm btn-outline-primary mt-auto align-self-start">
               Detaya Git
             </a>
           </div>
@@ -88,11 +85,8 @@
     {% endfor %}
   {% else %}
     <div class="col-12">
-      <div class="alert alert-info">
-        Henüz ilan bulunmuyor. İlk ilanı siz oluşturun!
-      </div>
+      <div class="alert alert-info">Henüz ilan eklenmemiş.</div>
     </div>
   {% endif %}
 </div>
 {% endblock %}
-
