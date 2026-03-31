@@ -1,50 +1,54 @@
-# Atık Değişim Platformu (MVP)
+# Atik Degisim Platformu (MVP)
 
-Basit bir Flask + SQLite web uygulaması. Fabrikaların atık ilanı açmasını ve diğer firmaların bu ilanlara talep/mesaj göndermesini sağlar.
+Bu repo yeniden duzenlenmistir. Kaynak kodlar `features/` altina tasinmistir.
+Proje Flask + SQLite ile calisir ve firmalarin atik ilani acmasini, diger firmalarin taleplerini yonetmesini saglar.
+
+## Klasor Duzeni
+
+- `features/`: Tum uygulama kaynak kodlari
+- `assets/`: Ekran goruntuleri, gorseller, dokuman varliklari
+- `agents/`: AI/otomasyon notlari veya agent dokumanlari
+- `README.md`, `idea.md`, `user-flow.md`, `tech-stack.md`: Koku dokumanlari
 
 ## Kurulum
 
-1. Python 3.10+ yüklü olduğundan emin olun.
-2. Bu klasörde bir sanal ortam (opsiyonel ama önerilir) oluşturun:
+1. Python 3.10+ yüklü oldugundan emin olun.
+2. (Opsiyonel) Sanal ortam olusturun:
    ```bash
    python -m venv venv
-   venv\Scripts\activate  # Windows
+   venv\Scripts\activate
    ```
-3. Gerekli paketleri yükleyin:
+3. Bagimliliklari yukleyin:
    ```bash
-   pip install -r requirements.txt
+   pip install -r features/requirements.txt
    ```
 
-## Çalıştırma
+## Calistirma
 
-1. `atik_platform` klasöründe olduğunuzdan emin olun.
-2. Uygulamayı başlatın:
+1. Proje kok klasorunde olun (`atik_platform`).
+2. Uygulamayi baslatin:
    ```bash
-   python app.py
+   python features/app.py
    ```
-3. Tarayıcıda şu adrese gidin: `http://127.0.0.1:5000`
+3. Tarayicida acin: `http://127.0.0.1:5000`
 
-İlk çalıştırmada `instance/database.db` dosyası otomatik oluşturulur ve tablolar yaratılır.
+Veritabani dosyasi `features/instance/database.db` altinda kullanilir.
 
-## Seed (Örnek Veri) Yükleme
+## Seed (Ornek Veri) Yukleme
 
-1. Uygulama kapalıyken aşağıdaki komutu çalıştırın:
-   ```bash
-   python seed.py
-   ```
-2. Konsolda "Seed verileri başarıyla eklendi." mesajını görmelisiniz.
-3. Sonrasında tekrar:
-   ```bash
-   python app.py
-   ```
-   komutuyla uygulamayı başlatın.
+Uygulama kapaliyken:
 
-## Özellikler (MVP)
+```bash
+python features/seed.py
+```
 
-- Ana sayfa: özet sayılar, son 5 ilan
-- İlan oluşturma
-- İlan listeleme ve filtreleme (kategori / şehir)
-- İlan detay sayfası
-- İlan için talep/mesaj gönderme
-- Basit Bootstrap tabanlı arayüz
+Sonra tekrar:
+
+```bash
+python features/app.py
+```
+
+## Not
+
+Eger ekran goruntusu veya tasarim gorselleri ekleyeceksen, bunlari `assets/` altinda toplaman onerilir.
 

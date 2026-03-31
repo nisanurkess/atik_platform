@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
@@ -107,9 +108,19 @@ def create_app():
     # Basit konfigürasyon
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or "çok-gizli-olmayan-bir-anahtar"
 
-    # SQLite: instance/database.db
-    os.makedirs(app.instance_path, exist_ok=True)
-    db_path = os.path.join(app.instance_path, "database.db")
+    # SQLite: her zaman proje kokundeki sabit DB dosyasini kullan.
+    # Boylesi farkli calistirma sekillerinde (cwd/modul yolu) yeni bos DB
+    # olusmasini engeller.
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    stable_instance_path = os.path.join(project_root, "instance")
+    os.makedirs(stable_instance_path, exist_ok=True)
+    db_path = os.path.join(stable_instance_path, "database.db")
+
+    # Geriye donuk uyumluluk: eski konumda DB varsa ve yeni konum yoksa tasi.
+    legacy_db_path = os.path.join(app.instance_path, "database.db")
+    if not os.path.exists(db_path) and os.path.exists(legacy_db_path):
+        shutil.copy2(legacy_db_path, db_path)
+
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
