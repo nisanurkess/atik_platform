@@ -15,6 +15,7 @@ from openai import APIError, OpenAI
 from services.categories import CATEGORIES
 
 _logger = logging.getLogger(__name__)
+_missing_key_logged = False
 
 
 def _unwrap_nested_json(raw: Any) -> Dict[str, Any]:
@@ -73,9 +74,13 @@ def _derive_summary_title_from_body(body: str) -> tuple[str, str]:
 
 
 def _api_key() -> str:
+    global _missing_key_logged
     key = (os.environ.get("OPENAI_API_KEY") or "").strip()
     if key == "your_api_key_here":
-        return ""
+        key = ""
+    if not key and not _missing_key_logged:
+        _logger.warning("OPENAI_API_KEY bulunamadi; AI servisleri yerel moda dusecek.")
+        _missing_key_logged = True
     return key
 
 

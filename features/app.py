@@ -101,7 +101,12 @@ def _ensure_sqlite_column(table_name: str, column_name: str, alter_sql: str) -> 
 
 
 def create_app():
-    load_dotenv()
+    # Yeniden yapilandirma sonrasi .env bazen proje kokunde, bazen features altinda olabilir.
+    # Ikisini de kontrollu sekilde yukleyerek API anahtari kaybini engelleriz.
+    here = os.path.dirname(__file__)
+    project_root = os.path.abspath(os.path.join(here, ".."))
+    load_dotenv(os.path.join(project_root, ".env"), override=False)
+    load_dotenv(os.path.join(here, ".env"), override=False)
 
     app = Flask(__name__, instance_relative_config=True)
 
